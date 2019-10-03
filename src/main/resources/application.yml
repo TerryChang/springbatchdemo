@@ -5,4 +5,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     generate-ddl: true
+    properties:
+      hibernate:
+        show_sql: true
 

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @SequenceGenerator(
@@ -29,13 +30,15 @@ public class User {
     @Column(name="LOGIN_ID", nullable = false)
     private String loginId;
 
+    @OneToMany
+    private List<ShoppingCart> shoppingCartList;
+
     public User() {
 
     }
 
     @Builder
-    public User(Long idx, String loginId, String name) {
-        this.idx = idx;
+    public User(String loginId, String name) {
         this.loginId = loginId;
         this.name = name;
     }
@@ -48,4 +51,7 @@ public class User {
         return idx;
     }
 
+    private void setIdx(Long idx) {
+        this.idx = idx;
+    }
 }
