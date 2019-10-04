@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -30,8 +31,10 @@ public class Product {
     @Column(name="PRODUCT_PRICE", nullable = false)
     private Integer productPrice;
 
-    @OneToMany
-    private List<ShoppingItem> shoppingItemList;
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "product")
+    private List<ShoppingItem> shoppingItemList = new ArrayList<>();
 
     @Builder
     public Product(String productName, Integer productPrice) {
@@ -49,10 +52,6 @@ public class Product {
 
     private void setIdx(Long idx) {
         this.idx = idx;
-    }
-
-    public void addShoppingItem(ShoppingItem shoppingItem) {
-        this.shoppingItemList.add(shoppingItem);
     }
 
     public void deleteShoppingItem(ShoppingItem shoppingItem) {

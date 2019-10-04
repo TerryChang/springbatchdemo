@@ -22,12 +22,20 @@ import javax.persistence.*;
 public class ShoppingItem {
     private Long idx;
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name="PRODUCT_IDX")
     private Product product;
-    private Integer cnt;
-    private Long totalPriceByProduct;
 
+    @Column(name="CNT")
+    private Integer cnt;
+
+    @Column(name="TOTAL_PRICE")
+    private Long totalPrice;
+
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name="SHOPPING_CART_IDX")
     private ShoppingCart shoppingCart;
@@ -36,7 +44,7 @@ public class ShoppingItem {
     public ShoppingItem(Product product, Integer cnt) {
         this.product = product;
         this.cnt = cnt;
-        this.totalPriceByProduct = new Long(product.getProductPrice()) * cnt;
+        this.totalPrice = new Long(product.getProductPrice()) * cnt;
     }
 
     @Id
@@ -54,6 +62,16 @@ public class ShoppingItem {
     public void update(Product product, Integer cnt) {
         this.product = product;
         this.cnt = cnt;
-        this.totalPriceByProduct = new Long(product.getProductPrice()) * cnt;
+        this.totalPrice = new Long(product.getProductPrice()) * cnt;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+        product.getShoppingItemList().add(this);
+    }
+
+    public void setShoppingCart(ShoppingCart shoppingCart) {
+        this.shoppingCart = shoppingCart;
+        shoppingCart.getShoppingItemList().add(this);
     }
 }

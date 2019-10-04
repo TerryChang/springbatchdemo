@@ -28,14 +28,18 @@ public class ShoppingCart {
     @JoinColumn(name = "USER_IDX")
     private User user;
 
-    @OneToMany
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "shoppingCart")
     private List<ShoppingItem> shoppingItemList = new ArrayList<>();
+
+    @Column(name = "TOTAL_PRICE")
     private Long totalPrice = 0L;
 
     @Builder
     public ShoppingCart(List<ShoppingItem> shoppingItemList) {
         this.shoppingItemList = shoppingItemList;
-        shoppingItemList.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPriceByProduct();});
+        shoppingItemList.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPrice();});
     }
 
     @Id
@@ -48,5 +52,9 @@ public class ShoppingCart {
 
     private void setIdx(Long idx) {
         this.idx = idx;
+    }
+
+    public void deleteShoppingItem(ShoppingItem shoppingItem) {
+        shoppingItemList.remove(shoppingItem);
     }
 }

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -30,8 +31,10 @@ public class User {
     @Column(name="LOGIN_ID", nullable = false)
     private String loginId;
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @OneToMany
-    private List<ShoppingCart> shoppingCartList;
+    private List<ShoppingCart> shoppingCartList = new ArrayList<>();
 
     public User() {
 
@@ -53,5 +56,10 @@ public class User {
 
     private void setIdx(Long idx) {
         this.idx = idx;
+    }
+
+    public void update(String name, String loginId) {
+        this.name = name;
+        this.loginId = loginId;
     }
 }
