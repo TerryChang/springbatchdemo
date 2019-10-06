@@ -1,9 +1,6 @@
 package com.terry.springbatchdemo.entity;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -17,6 +14,7 @@ import java.util.List;
         , allocationSize = 1
 )
 @Table(name="USER")
+@NoArgsConstructor
 @Getter
 @EqualsAndHashCode
 @ToString
@@ -33,12 +31,8 @@ public class User {
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToMany
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<ShoppingCart> shoppingCartList = new ArrayList<>();
-
-    public User() {
-
-    }
 
     @Builder
     public User(String loginId, String name) {
@@ -62,4 +56,6 @@ public class User {
         this.name = name;
         this.loginId = loginId;
     }
+
+
 }

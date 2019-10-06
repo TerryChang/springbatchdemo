@@ -1,9 +1,6 @@
 package com.terry.springbatchdemo.entity;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -17,10 +14,11 @@ import java.util.List;
         , allocationSize = 1
 )
 @Table(name="PRODUCT")
+@Access(AccessType.FIELD)
+@NoArgsConstructor
 @Getter
 @EqualsAndHashCode
 @ToString
-@Access(AccessType.FIELD)
 public class Product {
 
     private Long idx;
@@ -52,6 +50,11 @@ public class Product {
 
     private void setIdx(Long idx) {
         this.idx = idx;
+    }
+
+    public void update(String productName, int productPrice) {
+        this.productName = productName;
+        this.productPrice = productPrice;
     }
 
     public void deleteShoppingItem(ShoppingItem shoppingItem) {

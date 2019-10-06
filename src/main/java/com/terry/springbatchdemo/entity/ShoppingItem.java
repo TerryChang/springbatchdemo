@@ -25,7 +25,7 @@ public class ShoppingItem {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne
-    @JoinColumn(name="PRODUCT_IDX")
+    @JoinColumn(name="PRODUCT_IDX", foreignKey = @ForeignKey(name="FK_PRODUCT_IDX"), nullable = false)
     private Product product;
 
     @Column(name="CNT")
@@ -37,7 +37,7 @@ public class ShoppingItem {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne
-    @JoinColumn(name="SHOPPING_CART_IDX")
+    @JoinColumn(name="SHOPPING_CART_IDX", foreignKey = @ForeignKey(name="FK_SHOPPING_CART_IDX"), nullable = false)
     private ShoppingCart shoppingCart;
 
     @Builder
@@ -71,7 +71,14 @@ public class ShoppingItem {
     }
 
     public void setShoppingCart(ShoppingCart shoppingCart) {
+        // 기존에 설정되어 있는 ShoppingCart 객체가 있으면 기존 객체에서 현재 ShoppingItem 객체를 삭제해준다
+        // 그러지 않으면 ShoppingItem 객체가 서로 다른 ShoppingCart 객체에 등록되는 상황이 오게 된다
+        if(this.shoppingCart != null){
+            this.shoppingCart.removeShoppingItem(this);
+        }
         this.shoppingCart = shoppingCart;
-        shoppingCart.getShoppingItemList().add(this);
+        if(!shoppingCart.getShoppingItemList().contains(this)) {
+            shoppingCart.getShoppingItemList().add(this);
+        }
     }
 }
