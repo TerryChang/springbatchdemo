@@ -1,9 +1,6 @@
 package com.terry.springbatchdemo.entity;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -15,10 +12,11 @@ import javax.persistence.*;
         , allocationSize = 1
 )
 @Table(name="SHOPPING_ITEM")
+@NoArgsConstructor
+@Access(AccessType.FIELD)
 @Getter
 @EqualsAndHashCode
 @ToString
-@Access(AccessType.FIELD)
 public class ShoppingItem {
     private Long idx;
 
