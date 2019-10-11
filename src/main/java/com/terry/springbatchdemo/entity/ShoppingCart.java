@@ -1,6 +1,8 @@
 package com.terry.springbatchdemo.entity;
 
 import lombok.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ public class ShoppingCart {
 
     @ManyToOne
     @JoinColumn(name = "USER_IDX", foreignKey = @ForeignKey(name = "FK_USER_IDX"), nullable = false)
+    // @Fetch(FetchMode.JOIN)
     private User user;
 
     /**
@@ -34,6 +37,7 @@ public class ShoppingCart {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(mappedBy = "shoppingCart", cascade = CascadeType.ALL)
+    @OrderBy("idx asc")
     private List<ShoppingItem> shoppingItemList = new ArrayList<>();
 
     @Column(name = "TOTAL_PRICE")

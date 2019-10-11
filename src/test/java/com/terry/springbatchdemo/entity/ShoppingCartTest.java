@@ -107,15 +107,16 @@ public class ShoppingCartTest {
         assertThat(optionalShoppingCart.isPresent(), is(true));
         ShoppingCart shoppingCart = optionalShoppingCart.orElse(null);
         assertThat(shoppingCart, is(orgShoppingCart));
-
-        assertThat(shoppingCart.getUser(), not(nullValue()));
         assertThat(shoppingCart.getUser(), is(orgUser));
 
+        logger.info("--- shoppingItemList 변수 값 넣기 전 ---");
         List<ShoppingItem> shoppingItemsList = shoppingCart.getShoppingItemList();
+        logger.info("--- shoppingItemList 변수 값 넣은 후 ---");
         assertThat(shoppingItemsList.size(), is(3));
         int listIdx = 0;
 
         // 정렬기준에 맞춰서 ShoppingItem 엔티티 객체들이 조회되었는지 체크
+        logger.info("--- loop 돌며 변수 값 체크 전 ---");
         for(ShoppingItem shoppingItem : shoppingItemsList) {
             try {
                 assertThat(shoppingItem.getIdx(), is(orgShoppingItemList.get(listIdx++).getIdx()));
@@ -124,5 +125,33 @@ public class ShoppingCartTest {
                 throw e;
             }
         }
+        logger.info("--- loop 돌며 변수 값 체크 후 ---");
+    }
+
+    @Test
+    public void fetch_join을_사용한_조회() {
+        Optional<ShoppingCart> optionalShoppingCart = shoppingCartRepository.fullJoinFindById(orgShoppingCart.getIdx());
+        assertThat(optionalShoppingCart.isPresent(), is(true));
+        ShoppingCart shoppingCart = optionalShoppingCart.orElse(null);
+        assertThat(shoppingCart, is(orgShoppingCart));
+        assertThat(shoppingCart.getUser(), is(orgUser));
+
+        logger.info("--- shoppingItemList 변수 값 넣기 전 ---");
+        List<ShoppingItem> shoppingItemsList = shoppingCart.getShoppingItemList();
+        logger.info("--- shoppingItemList 변수 값 넣은 후 ---");
+        assertThat(shoppingItemsList.size(), is(3));
+        int listIdx = 0;
+
+        // 정렬기준에 맞춰서 ShoppingItem 엔티티 객체들이 조회되었는지 체크
+        logger.info("--- loop 돌며 변수 값 체크 전 ---");
+        for(ShoppingItem shoppingItem : shoppingItemsList) {
+            try {
+                assertThat(shoppingItem.getIdx(), is(orgShoppingItemList.get(listIdx++).getIdx()));
+            } catch(Exception e) {
+                logger.error("제대로_생성되었는지_테스트 메소드에서 ShoppingItemList 검사과정에서 예외 : 리스트 인덱스  - {}, {}", listIdx, e.getMessage());
+                throw e;
+            }
+        }
+        logger.info("--- loop 돌며 변수 값 체크 후 ---");
     }
 }

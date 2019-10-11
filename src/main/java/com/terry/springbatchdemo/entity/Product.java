@@ -32,6 +32,7 @@ public class Product {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(mappedBy = "product")
+    @OrderBy("idx asc")
     private List<ShoppingItem> shoppingItemList = new ArrayList<>();
 
     @Builder
