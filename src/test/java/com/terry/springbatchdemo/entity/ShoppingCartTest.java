@@ -14,9 +14,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -53,7 +51,7 @@ public class ShoppingCartTest {
     private Product orgProduct1 = null;
     private Product orgProduct2 = null;
     private Product orgProduct3 = null;
-    private List<ShoppingItem> orgShoppingItemList = null;
+    private Set<ShoppingItem> orgShoppingItemSet = null;
     private ShoppingCart orgShoppingCart = null;
 
     @Before
@@ -67,12 +65,12 @@ public class ShoppingCartTest {
         ShoppingItem shoppingItem2 = ShoppingItem.builder().product(product2).cnt(3).build();
         ShoppingItem shoppingItem3 = ShoppingItem.builder().product(product3).cnt(2).build();
 
-        List<ShoppingItem> shoppingItemList = new ArrayList<>();
-        shoppingItemList.add(shoppingItem1);
-        shoppingItemList.add(shoppingItem2);
-        shoppingItemList.add(shoppingItem3);
+        Set<ShoppingItem> shoppingItemSet = new LinkedHashSet<>();
+        shoppingItemSet.add(shoppingItem1);
+        shoppingItemSet.add(shoppingItem2);
+        shoppingItemSet.add(shoppingItem3);
 
-        ShoppingCart shoppingCart = ShoppingCart.builder().user(user).shoppingItemList(shoppingItemList).build();
+        ShoppingCart shoppingCart = ShoppingCart.builder().user(user).shoppingItemSet(shoppingItemSet).build();
 
         shoppingItem1.setShoppingCart(shoppingCart);
         shoppingItem2.setShoppingCart(shoppingCart);
@@ -93,7 +91,7 @@ public class ShoppingCartTest {
         orgProduct1 = product1;
         orgProduct2 = product2;
         orgProduct3 = product3;
-        orgShoppingItemList = shoppingItemList;
+        orgShoppingItemSet = shoppingItemSet;
         orgShoppingCart = shoppingCart;
 
         testEntityManager.flush();
@@ -109,49 +107,77 @@ public class ShoppingCartTest {
         assertThat(shoppingCart, is(orgShoppingCart));
         assertThat(shoppingCart.getUser(), is(orgUser));
 
-        logger.info("--- shoppingItemList 변수 값 넣기 전 ---");
-        List<ShoppingItem> shoppingItemsList = shoppingCart.getShoppingItemList();
-        logger.info("--- shoppingItemList 변수 값 넣은 후 ---");
-        assertThat(shoppingItemsList.size(), is(3));
+        logger.info("--- shoppingItemSet 변수 값 넣기 전 ---");
+        Set<ShoppingItem> shoppingItemsSet = shoppingCart.getShoppingItemSet();
+        logger.info("--- shoppingItemSet 변수 값 넣은 후 ---");
+        assertThat(shoppingItemsSet.size(), is(3));
         int listIdx = 0;
 
         // 정렬기준에 맞춰서 ShoppingItem 엔티티 객체들이 조회되었는지 체크
         logger.info("--- loop 돌며 변수 값 체크 전 ---");
-        for(ShoppingItem shoppingItem : shoppingItemsList) {
-            try {
-                assertThat(shoppingItem.getIdx(), is(orgShoppingItemList.get(listIdx++).getIdx()));
-            } catch(Exception e) {
-                logger.error("제대로_생성되었는지_테스트 메소드에서 ShoppingItemList 검사과정에서 예외 : 리스트 인덱스  - {}, {}", listIdx, e.getMessage());
-                throw e;
+        for(ShoppingItem shoppingItem : shoppingItemsSet) {
+            for(ShoppingItem orgShoppingItem : orgShoppingItemSet) {
+                try {
+                    assertThat(shoppingItem.getIdx(), is(orgShoppingItem.getIdx()));
+                } catch(Exception e) {
+                    logger.error("제대로_생성되었는지_테스트 메소드에서 ShoppingItemList 검사과정에서 예외 : 리스트 인덱스  - {}, {}", listIdx, e.getMessage());
+                    throw e;
+                }
             }
         }
         logger.info("--- loop 돌며 변수 값 체크 후 ---");
     }
 
     @Test
-    public void fetch_join을_사용한_조회() {
-        Optional<ShoppingCart> optionalShoppingCart = shoppingCartRepository.fullJoinFindById(orgShoppingCart.getIdx());
+    public void user에대한_별도_select_구문이_실행되는_ShoppingCart_엔티티_조회_로그에서_Query체크() {
+        logger.info("userInnerJoinFindById 메소드 실행전");
+        Optional<ShoppingCart> optionalShoppingCart = shoppingCartRepository.userInnerJoinFindById(orgShoppingCart.getIdx());
+        logger.info("userInnerJoinFindById 메소드 실행후");
         assertThat(optionalShoppingCart.isPresent(), is(true));
         ShoppingCart shoppingCart = optionalShoppingCart.orElse(null);
         assertThat(shoppingCart, is(orgShoppingCart));
         assertThat(shoppingCart.getUser(), is(orgUser));
 
-        logger.info("--- shoppingItemList 변수 값 넣기 전 ---");
-        List<ShoppingItem> shoppingItemsList = shoppingCart.getShoppingItemList();
-        logger.info("--- shoppingItemList 변수 값 넣은 후 ---");
-        assertThat(shoppingItemsList.size(), is(3));
-        int listIdx = 0;
+        logger.info("--- shoppingItemSet 변수 값 넣기 전 ---");
+        Set<ShoppingItem> shoppingItemsSet = shoppingCart.getShoppingItemSet();
+        logger.info("--- shoppingItemSet 변수 값 넣은 후 ---");
+        assertThat(shoppingItemsSet.size(), is(3));
+        assertThat(shoppingItemsSet.size() == orgShoppingItemSet.size(), is(true));
 
         // 정렬기준에 맞춰서 ShoppingItem 엔티티 객체들이 조회되었는지 체크
+        Iterator<ShoppingItem> shoppingItemIterator = shoppingItemsSet.iterator();
+        Iterator<ShoppingItem> orgShoppingItemIterator = orgShoppingItemSet.iterator();
         logger.info("--- loop 돌며 변수 값 체크 전 ---");
-        for(ShoppingItem shoppingItem : shoppingItemsList) {
-            try {
-                assertThat(shoppingItem.getIdx(), is(orgShoppingItemList.get(listIdx++).getIdx()));
-            } catch(Exception e) {
-                logger.error("제대로_생성되었는지_테스트 메소드에서 ShoppingItemList 검사과정에서 예외 : 리스트 인덱스  - {}, {}", listIdx, e.getMessage());
-                throw e;
-            }
+        for(int i=0; i < shoppingItemsSet.size(); i++) {
+            ShoppingItem selectShoppingItem = shoppingItemIterator.next();
+            ShoppingItem orgShoppingItem = orgShoppingItemIterator.next();
+
+            logger.info("selectShoppingItem.getIdx() : {}, orgShoppingItem.getIdx() : {}", selectShoppingItem.getIdx(), orgShoppingItem.getIdx());
+            assertThat(selectShoppingItem.getIdx().equals(orgShoppingItem.getIdx()), is(true));
         }
         logger.info("--- loop 돌며 변수 값 체크 후 ---");
+    }
+
+    @Test
+    public void entityManager로_조회() {
+        ShoppingCart shoppingCart = testEntityManager.find(ShoppingCart.class, orgShoppingCart.getIdx());
+    }
+
+    @Test
+    public void LinkedHashSet의_equals_메소드가_저장된_순서도_같이_비교하여_판단하는지_테스트() {
+        LinkedHashSet<Integer> lhs1 = new LinkedHashSet<>();
+        LinkedHashSet<Integer> lhs2 = new LinkedHashSet<>();
+
+        lhs1.add(10);
+        lhs1.add(20);
+        lhs1.add(30);
+        lhs1.add(40);
+
+        lhs2.add(10);
+        lhs2.add(30);
+        lhs2.add(40);
+        lhs2.add(20);
+
+        assertThat(lhs1.equals(lhs2), is(false));
     }
 }

@@ -6,7 +6,9 @@ import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @SequenceGenerator(
@@ -24,31 +26,30 @@ import java.util.List;
 public class ShoppingCart {
     private Long idx;
 
-    @ManyToOne
-    @JoinColumn(name = "USER_IDX", foreignKey = @ForeignKey(name = "FK_USER_IDX"), nullable = false)
-    // @Fetch(FetchMode.JOIN)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "USER_IDX", foreignKey = @ForeignKey(name = "FK_SHOPPINGCART_USER"), nullable = false)
     private User user;
 
     /**
-     * ShoppingItem은 중복이 허용될 수 있다.
-     * 장바구니를 생각해보면 같은 상품을 여러번 가서 해당 항목을 다시 장바구니에 등록할 수 있는 것을 생각해보면 중복이 허용되는것을 알 수 있다
-     * 만약 중복을 허용하지 않을꺼면 Set 인터페이스를 사용하면 된다
+     * ShoppingItem은 외형적으로는 중복이 허용될것 같아 보이나 실제로는 중복이 허용되는 것이 아니다
+     * 장바구니를 생각해보면 같은 상품을 여러번 가서 같은 갯수로 다시 장바구니에 등록할수는 있겠으나 그렇다고 그것 하나하나가 같은 값이라고 할 수는 없다. 왜냐면 그거 하나하나 고유 구분 키값이 존재하기 때문이다
+     * 그래서 여기서는 Set 인터페이스를 사용하는 것이 더 효율적일수도 있다(순서까지 고려하면 LinkedHashSet 클래스를 사용하는게 좋다)
      */
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(mappedBy = "shoppingCart", cascade = CascadeType.ALL)
     @OrderBy("idx asc")
-    private List<ShoppingItem> shoppingItemList = new ArrayList<>();
+    private Set<ShoppingItem> shoppingItemSet = new LinkedHashSet<>();
 
     @Column(name = "TOTAL_PRICE")
     private Long totalPrice = 0L;
 
     @Builder
-    public ShoppingCart(User user, List<ShoppingItem> shoppingItemList) {
+    public ShoppingCart(User user, Set<ShoppingItem> shoppingItemSet) {
         this.user = user;
         user.getShoppingCartList().add(this);
-        this.shoppingItemList = shoppingItemList;
-        shoppingItemList.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPrice();});
+        this.shoppingItemSet = shoppingItemSet;
+        shoppingItemSet.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPrice();});
     }
 
     @Id
@@ -71,12 +72,12 @@ public class ShoppingCart {
             shoppingItem.setShoppingCart(this);
         }
 
-        if(!shoppingItemList.contains(shoppingItem)) {
-            shoppingItemList.add(shoppingItem);
+        if(!shoppingItemSet.contains(shoppingItem)) {
+            shoppingItemSet.add(shoppingItem);
         }
     }
 
     public void removeShoppingItem(ShoppingItem shoppingItem) {
-        shoppingItemList.remove(shoppingItem);
+        shoppingItemSet.remove(shoppingItem);
     }
 }

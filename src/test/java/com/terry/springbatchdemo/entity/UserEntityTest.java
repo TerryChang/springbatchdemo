@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,7 +40,7 @@ public class UserEntityTest {
     public void before() {
         User user = userRepository.save(User.builder().name("오라클").loginId("oracle.com").build());
         userIdx = user.getIdx();
-        ShoppingCart shoppingCart = shoppingCartRepository.save(ShoppingCart.builder().user(user).shoppingItemList(new ArrayList<ShoppingItem>()).build());
+        ShoppingCart shoppingCart = shoppingCartRepository.save(ShoppingCart.builder().user(user).shoppingItemSet(new LinkedHashSet<>()).build());
         testEntityManager.flush();
         testEntityManager.clear();
         logger.info("before method user : {}", user.toString());

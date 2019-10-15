@@ -101,8 +101,8 @@ public class ShoppingItem {
             this.shoppingCart.removeShoppingItem(this);
         }
         this.shoppingCart = shoppingCart;
-        if(!shoppingCart.getShoppingItemList().contains(this)) {
-            shoppingCart.getShoppingItemList().add(this);
+        if(!shoppingCart.getShoppingItemSet().contains(this)) {
+            shoppingCart.getShoppingItemSet().add(this);
         }
     }
 }
