@@ -33,7 +33,7 @@ public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Long
     // @Query("select sc from ShoppingCart sc where sc.idx = :shoppingCartIdx ")
     // inner join만 사용하는 것으로는 필드가 별도 엔티티 객체인 것까지 같이 조회하진 않는다. 다만 해당 엔티티 객체의 key값만 조회할 뿐이다
     // fetch join을 collection 계열 조회를 해야 할 때만 사용한다고 생각하고 있다가 다시 내용을 보고 수정했다(엔티티의 멤버변수가 엔티티 일 경우 그 엔티티를 조회할때도 fetch join 을 사용한다)
-    @Query("select sc from ShoppingCart sc inner join fetch sc.user u inner join fetch sc.shoppingItemSet ss where sc.idx = :shoppingCartIdx order by sc.idx, ss.idx")
+    @Query("select sc from ShoppingCart sc inner join fetch sc.user u inner join fetch sc.shoppingItemSet ss inner join fetch ss.product p where sc.idx = :shoppingCartIdx order by sc.idx, ss.idx")
     Optional<ShoppingCart> userInnerJoinFindById(@Param("shoppingCartIdx") Long idx);
 
     @EntityGraph(attributePaths = {"user", "shoppingItemSet.product"}, type = EntityGraph.EntityGraphType.LOAD)
@@ -41,7 +41,6 @@ public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Long
     Optional<ShoppingCart> useEntityGraphFindById(@Param("shoppingCartIdx") Long idx);
 
     @Query("select sc from ShoppingCart sc where sc.idx = :shoppingCartIdx ")
-    Optional<ShoppingCart> normalFindById(@Param("shoppingCartIdx") Long idx);
+    Optional<ShoppingCart> onlyQueryFindById(@Param("shoppingCartIdx") Long idx);
 
-    Optional<ShoppingCart> findByIdx(Long idx);
 }

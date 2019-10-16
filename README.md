@@ -5,7 +5,7 @@
 소스에 대한 대략적인 설명은 이정도로 하고 이 이후의 내용은 공부하면서 얻은 내용을 두서없이 정리한 것으로 존칭어 사용안하
 고 작성합니다. 일단은 이렇게 정리하고 좀더 안정화가 되면 제 블로그에 관련 내용을 더 정리하도록 하겠습니다
 
-**1. @ManyTonOne의 Eager fetch mode에 대하여...**
+#### **1. @ManyTonOne의 Eager fetch mode에 대하여...**
 
 흔히 알고 있는 내용은 @ManyToOne 어노테이션 사용시 fetch = FetchType.EAGER로 사용하면 별도로 언급을 안해도 조회할때 관련
  객체를 같이 조회하는 것으로 알려져 있다. 그러나 이러한 이해때문에 혼선이 생기는 지점이 있어서 정리해둔다. 예를 들어 다음과 
@@ -41,8 +41,8 @@
  Member member = entityManager.find(Member.class, 10);
  ```
 
- 이렇게 조회할 경우 실행되는 실제 SQL는 다음과 같은 형태로 실행이 된다(설명을 위해 이해가 전달이 되게끔 SQL을 작성한 것이지 
- 실제 hibernate가 출력하는 SQL문은 아니다)
+ 이렇게 조회할 경우 실행되는 실제 SQL는 다음과 같은 형태로 실행이 된다(이해를 위해 내용 전달이 되게끔 SQL을 작성한 것이지 
+ 실제 hibernate가 위의 find 메소드를 실행시켰을때 출력하는 SQL문과는 완전 똑같은 형태는 아니다)
  
 ```sql
  select m.idx, m.name, t.idx, t.teamName from Member m, Team t where m.idx = 10 and m.teamidx = t.idx
@@ -60,18 +60,18 @@
   언급한 find 문과는 다른 식으로 조회하게 된다. 실제 실행되는 sql 문은 다음과 같다
 
 ```sql  
- select idx, name, teamIdx from Member where idx = 10;
- select idx, teamName from Team where idx = 5; (여기서 5는 위의 SQL 문에서 조회하여 나온 teamIdx 컬럼 값이다)
+ select idx, name, team_idx from Member where idx = 10;
+ select idx, teamName from Team where idx = 5; (여기서 5는 위의 SQL 문에서 조회하여 나온 team_idx 컬럼 값이다)
 ```
  
  find 문에서는 Member 테이블과 Team 테이블을 join 을 걸어서 이를 진행했지만 **jpql로 조회할 경우엔 Member 테이블과 Team 
  테이블을 join 걸지 않고 따로따로 조회**하고 있다. ManyToOne의 관계 설정만 놓고 보면 join 해서 가져오겠지..null을 허용하면 
  left outer join 형태를 취하는 한이 있더라도 join 해서 가져오겠지..라고 생각하고 있겠지만 실제로는 그렇지가 않다. 그래서
- jpql을 사용해서 조회할 경우에는 EAGER로 되어 있다 하더라도 jpql에서 명시적으로 join을 걸어서 조회하도록 해야 한다.
+ **jpql을 사용해서 조회할 경우에는 EAGER로 되어 있다 하더라도 jpql에서 명시적으로 join을 걸어서 조회**하도록 해야 한다.
  
- 만약 Spring Data Jpa를 사용할 경우 @EntityGraph 어노테이션을 사용하면 jpql에서 별도로 join을 명시하지 않아도 내부적으로 
- join을 걸어서 가져올 수 있지만 문제는 이렇게 할 경우 nullable을 false로 해서 null이 없다고 설정을 했는데도 불구하고 
- left outer join으로 가져오기 때문에 퍼포먼스에 문제가 있게 된다
+ 만약 Spring Data Jpa를 사용할 경우 **@EntityGraph 어노테이션을 사용**하면 jpql에서 별도로 join을 명시하지 않아도 내부적으로 
+ join을 걸어서 가져올 수 있지만 문제는 이렇게 할 경우 **nullable을 false로 해서 null이 없다고 설정을 했는데도 불구하고 
+ left outer join으로 가져오기 때문에 퍼포먼스에 문제**가 있게 된다
 
 ```java
  @EntityGraph(attributePaths = {"team"}, type = EntityGraph.EntityGraphType.LOAD)
@@ -79,7 +79,7 @@
  Optional<Member> memberFindById(@Param("idx") Long idx);
 ``` 
 
- 2. Entity에서 LinkedHashSet 을 사용하는 것에 대하여
+#### **2. Entity에서 LinkedHashSet 을 사용하는 것에 대하여**
  
  Entity에서 중복 객체를 허용하지 않을 경우 Set 인터페이스를 구현한 클래스를 사용하게 되는데 Set의 경우 순서 개념이 없기 
  때문에 순서 개념을 적용할려면 LinkedHashSet 클래스를 설정하여 사용하게 된다. 근데 여기서 오해를 살 지점이 하나 있다.
@@ -104,11 +104,24 @@
  ``` 
 
  sql 상에서는 Member 테이블의 idx 순으로 조회가 되어서 나오지만 그것을 실제 엔티티로 변환하는 과정에서는 순서가 무시된다
- 왜냐면 insert 할 때는 내부적으로 LinkedHashSet 클래스 객체 안에 들어가 있는 상태이기 때문에 순서대로 넣게 되지만 select
- 경우엔 hibernate가 엔티티에 초기화한 LinkedHashSet을 보는 것이 아니라 Set 인터페이스를 보고 이에 따라 PersistenceSet 
- 클래스 객체를 생성하여 넣기 때문에 순서가 무시되는 상황이 벌어지게 되기 때문이다.
-  
+ 왜냐면 insert 할 때는 내부적으로 LinkedHashSet 클래스 객체 안에 들어가 있는 상태이기 때문에 순서대로 넣게 되지만 **select
+ 경우엔 hibernate가 엔티티에 초기화한 LinkedHashSet을 보는 것이 아니라 Set 인터페이스를 보고 이에 따라 HashSet을 감싼 
+ PersistenceSet 클래스 객체를 생성하여 넣기 때문에 순서가 무시되는 상황이 벌어지게 되기 때문**이다.
  
+ 그래서 이와 같은 문제를 해결하기 위해서는 다음과 같이 어노테이션을 추가로 설정해주어야 한다
+ 
+ ```java
+  @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+  @OrderBy("idx asc")
+  private Set<Member> memberSet = new LinkedHashSet<>();
+ ``` 
+ 
+ hibernate에서는 해당 field에 @OrderBy 어노테이션이 적용되어 있기 때문에 HashSet이 아닌 **LinkedHashSet을 감싼 PersistenceSet 
+ 클래스 객체를 생성해서 넣기 때문에 순서를 보장**하게 된다. 만약 위에서 언급했던 jpql에서 order by m.idx가 아니라 order by m.idx desc
+ 이렇게 역정렬을 하라고 줄 경우엔 어떻게 될까? 그때는 **@OrderBy 어노테이션에 설정한 idx asc는 무시하고 jpql에서 설정한 정렬 기준으로 
+ 동작**하게 된다. @OrderBy 어노테이션에서 설정하는 정렬 기준은 우리가 EntityManager 클래스의 find 메소드등의 메소드로 엔티티를 조회할때
+ 그때 사용되는 정렬기준이다(메소드에서는 조회하고자 하는 엔티티의 하위 엔티티에 대한 정렬 기준을 설정하는 방법이 없기 때문에
+ 저렇게 한 것이다)
   
   
    

@@ -46,9 +46,8 @@ public class ShoppingItem {
      */
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @ManyToOne
-    @JoinColumn(name="PRODUCT_IDX", foreignKey = @ForeignKey(name="FK_PRODUCT_IDX"), nullable = false)
-    // @Fetch(FetchMode.JOIN)
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name="PRODUCT_IDX", foreignKey = @ForeignKey(name="FK_SHOPPING_ITEM_PRODUCT"), nullable = false)
     private Product product;
 
     @Column(name="CNT")
@@ -59,9 +58,8 @@ public class ShoppingItem {
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @ManyToOne
-    @JoinColumn(name="SHOPPING_CART_IDX", foreignKey = @ForeignKey(name="FK_SHOPPING_CART_IDX"), nullable = false)
-    // @Fetch(FetchMode.JOIN)
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name="SHOPPING_CART_IDX", foreignKey = @ForeignKey(name="FK_SHOPPING_ITEM_SHOPPING_CART"))
     private ShoppingCart shoppingCart;
 
     @Builder

@@ -101,6 +101,7 @@ public class ShoppingCartTest {
 
     @Test
     public void 제대로_생성되었는지_테스트() {
+        logger.info("제대로_생성되었는지_테스트 시작");
         Optional<ShoppingCart> optionalShoppingCart = shoppingCartRepository.findById(orgShoppingCart.getIdx());
         assertThat(optionalShoppingCart.isPresent(), is(true));
         ShoppingCart shoppingCart = optionalShoppingCart.orElse(null);
@@ -114,18 +115,18 @@ public class ShoppingCartTest {
         int listIdx = 0;
 
         // 정렬기준에 맞춰서 ShoppingItem 엔티티 객체들이 조회되었는지 체크
+        Iterator<ShoppingItem> shoppingItemIterator = shoppingItemsSet.iterator();
+        Iterator<ShoppingItem> orgShoppingItemIterator = orgShoppingItemSet.iterator();
         logger.info("--- loop 돌며 변수 값 체크 전 ---");
-        for(ShoppingItem shoppingItem : shoppingItemsSet) {
-            for(ShoppingItem orgShoppingItem : orgShoppingItemSet) {
-                try {
-                    assertThat(shoppingItem.getIdx(), is(orgShoppingItem.getIdx()));
-                } catch(Exception e) {
-                    logger.error("제대로_생성되었는지_테스트 메소드에서 ShoppingItemList 검사과정에서 예외 : 리스트 인덱스  - {}, {}", listIdx, e.getMessage());
-                    throw e;
-                }
-            }
+        for(int i=0; i < shoppingItemsSet.size(); i++) {
+            ShoppingItem selectShoppingItem = shoppingItemIterator.next();
+            ShoppingItem orgShoppingItem = orgShoppingItemIterator.next();
+
+            logger.info("selectShoppingItem.getIdx() : {}, orgShoppingItem.getIdx() : {}", selectShoppingItem.getIdx(), orgShoppingItem.getIdx());
+            assertThat(selectShoppingItem.getIdx().equals(orgShoppingItem.getIdx()), is(true));
         }
         logger.info("--- loop 돌며 변수 값 체크 후 ---");
+        logger.info("제대로_생성되었는지_테스트 종료");
     }
 
     @Test
@@ -159,6 +160,52 @@ public class ShoppingCartTest {
     }
 
     @Test
+    public void 일부_ShoppingItem_엔티티_객체_삭제후_업데이트_반영_테스트() {
+        Optional<ShoppingCart> optionalShoppingCart = shoppingCartRepository.userInnerJoinFindById(orgShoppingCart.getIdx());
+        ShoppingCart shoppingCart = optionalShoppingCart.orElse(null);
+        Set<ShoppingItem> shoppingItemSet = shoppingCart.getShoppingItemSet();
+
+        Iterator<ShoppingItem> shoppingItemIterator = shoppingItemSet.iterator();
+        int idx = 0;
+        Long deleteShoppingItemIdx = 0L;
+        while(shoppingItemIterator.hasNext()) {
+            if(idx == 1) {
+                ShoppingItem shoppingItem = shoppingItemIterator.next();
+                deleteShoppingItemIdx = shoppingItem.getIdx();
+                shoppingCart.removeShoppingItem(shoppingItem);
+                break;
+            }
+            idx++;
+        }
+
+        logger.info("saveAndFlush 메소드 실행전");
+        shoppingCartRepository.saveAndFlush(shoppingCart);
+        logger.info("saveAndFlush 메소드 실행후");
+
+        testEntityManager.flush();
+        testEntityManager.clear();
+
+        // 삭제된 뒤의 ShoppingCart 엔티티 객체 다시 조회
+        optionalShoppingCart = shoppingCartRepository.userInnerJoinFindById(orgShoppingCart.getIdx());
+        shoppingCart = optionalShoppingCart.orElse(null);
+        shoppingItemSet = shoppingCart.getShoppingItemSet();
+        assertThat(shoppingItemSet.size(), is(2)); // 삭제했기때문에 2가 나와야 한다
+
+        shoppingItemIterator = shoppingItemSet.iterator();
+        boolean notFind = true;
+        while(shoppingItemIterator.hasNext()) {
+            ShoppingItem shoppingItem = shoppingItemIterator.next();
+            if(shoppingItem.getIdx() == deleteShoppingItemIdx) {
+                notFind = false;
+                break;
+            }
+        }
+
+        assertThat(notFind, is(false));
+
+    }
+
+    @Test
     public void entityManager로_조회() {
         ShoppingCart shoppingCart = testEntityManager.find(ShoppingCart.class, orgShoppingCart.getIdx());
     }
@@ -178,6 +225,8 @@ public class ShoppingCartTest {
         lhs2.add(40);
         lhs2.add(20);
 
+        //LinkedHashSet의 equals 메소드가 순서도 같이 비교한다는 생각에 false라고 설정하고 테스트 했지만 false로 하면 테스트가 실패한다
+        // 바꿔말하면 LinkedHashSet의 경우 크기와 들어가 있는 값에 대한 비교까지는 하지만 들어가 있는 순서는 비교하지 않는다는 뜻으로 해석된다
         assertThat(lhs1.equals(lhs2), is(false));
     }
 }
