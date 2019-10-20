@@ -93,13 +93,26 @@ public class ShoppingItem {
     }
 
     public void setShoppingCart(ShoppingCart shoppingCart) {
+
+
+
         // 기존에 설정되어 있는 ShoppingCart 객체가 있으면 기존 객체에서 현재 ShoppingItem 객체를 삭제해준다
         // 그러지 않으면 ShoppingItem 객체가 서로 다른 ShoppingCart 객체에 등록되는 상황이 오게 된다
+        /*
         if(this.shoppingCart != null){
             this.shoppingCart.removeShoppingItem(this);
         }
         this.shoppingCart = shoppingCart;
         if(!shoppingCart.getShoppingItemSet().contains(this)) {
+            shoppingCart.getShoppingItemSet().add(this);
+        }
+        */
+
+        if(this.shoppingCart != null) {
+            this.shoppingCart.getShoppingItemSet().remove(this);
+        }
+        this.shoppingCart = shoppingCart;
+        if(shoppingCart != null) {
             shoppingCart.getShoppingItemSet().add(this);
         }
     }
