@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,8 +19,9 @@ import static org.hamcrest.Matchers.*;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@ActiveProfiles("h2")
+@ActiveProfiles("h2_log4jdbc")          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
 @DataJpaTest
+@AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
 public class ProductEntityTest {
 
     @Autowired

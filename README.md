@@ -123,5 +123,12 @@
  그때 사용되는 정렬기준이다(메소드에서는 조회하고자 하는 엔티티의 하위 엔티티에 대한 정렬 기준을 설정하는 방법이 없기 때문에
  저렇게 한 것이다)
   
-  
-   
+ #### **3. @DataJpaTest와 log4jdbc를 같이 사용하면서 겪었던 오해 및 풀이법** 
+ 
+ Test 클래스에 @ActiveProfile 을 이용해서 Profile을 설정하면 그걸 따라가서 DataSource를 사용할 줄 알았는데 @DataJpaTest 어노테이션을 사용하면
+ 자체적으로 Memory 상에서 Test용 DataSource를 사용하게 된다. 그래서 기존 DataSource에 log4jdbc를 설정하더라도 아무 소용이 없게 된다. 이를 해결할려면
+ 테스트용 DataSource를 외부에서 생성한뒤 Test 클래스에서 이것을 이용하도록 지정하는 것이다. 그래서 테스트 클래스에 
+ 
+ @AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
+ 
+ 를 불여줌으로써 @DataJpaTest가 자체적으로 DataSource를 생성하지 말고 Profile의 DataSource를 가져다가 쓰도록 한다

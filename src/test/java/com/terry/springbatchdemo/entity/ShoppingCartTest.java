@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,10 +20,14 @@ import java.util.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+// @DataJpaTest만 사용하면 내부적으로 자체 In Memory DataSource를 생성해버리기 때문에 테스트 과정에서 log4jdbc 같은 sql log 관련 라이브러리를 사용할 수 없다
+// 어차피 H2 DB를 사용하기로 한것은 Test 용도일때만 사용하려 한 것이기 때문에 @AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE) 를 넣어서 테스트시 별도 DataSource를 생성하지 않게 하고
+// @ActiveProfiles 를 h2로 설정 넣어줌으로써 log4jdbc를 사용하도록 유도해준다
 @Slf4j
 @RunWith(SpringRunner.class)
-@ActiveProfiles("h2")
+@ActiveProfiles("h2_log4jdbc")          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
 @DataJpaTest
+@AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
 public class ShoppingCartTest {
 
     @Autowired
@@ -159,6 +164,12 @@ public class ShoppingCartTest {
         logger.info("--- loop 돌며 변수 값 체크 후 ---");
     }
 
+    /**
+     * Set 인터페이스에서 item을 삭제한다고 해서 DB에서도 삭제가 되는게 아니다..
+     * 관계만 제거되는 것이다.
+     * 예를 들어 테이블상에서 foreign key를 null 로 setting 한 상태로 테이블에 놔두는 상황과 같다고 보면 된다
+     * 그렇기때문에 직접적인 삭제 구문도 같이 실행시켜줘야 한다
+     */
     @Test
     public void 일부_ShoppingItem_엔티티_객체_삭제후_업데이트_반영_테스트() {
         Optional<ShoppingCart> optionalShoppingCart = shoppingCartRepository.userInnerJoinFindById(orgShoppingCart.getIdx());
@@ -173,6 +184,7 @@ public class ShoppingCartTest {
                 ShoppingItem shoppingItem = shoppingItemIterator.next();
                 deleteShoppingItemIdx = shoppingItem.getIdx();
                 shoppingCart.removeShoppingItem(shoppingItem);
+                shoppingItemRepository.deleteById(shoppingItem.getIdx());
                 break;
             }
             idx++;
@@ -201,7 +213,7 @@ public class ShoppingCartTest {
             }
         }
 
-        assertThat(notFind, is(false));
+        assertThat(notFind, is(true));
 
     }
 

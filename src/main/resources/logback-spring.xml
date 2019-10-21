@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration debug="true" scan="true" scanPeriods="30 seconds">
+    <include resource="org/springframework/boot/logging/logback/base.xml" />
+    <springProfile name="h2_log4jdbc">
+        <logger name="jdbc.sqlonly" level="off" additivity="false">
+            <appender-ref ref="CONSOLE" />
+        </logger>
+        <logger name="jdbc.sqltiming" level="debug" additivity="false">
+            <appender-ref ref="CONSOLE" />
+        </logger>
+        <logger name="jdbc.audit" level="off" additivity="false" />
+        <logger name="jdbc.resultset" level="off" additivity="false" />
+        <logger name="jdbc.resultsettable" level="off" additivity="false" />
+        <logger name="jdbc.connection" level="off" additivity="false" />
+
+        <logger name="javax.sql" level="info" additivity="false">
+            <appender-ref ref="CONSOLE" />
+        </logger>
+    </springProfile>
+    <root level="info">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

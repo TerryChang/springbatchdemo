@@ -64,19 +64,6 @@ public class ShoppingCart {
         this.idx = idx;
     }
 
-    public void addShoppingItem(ShoppingItem shoppingItem) {
-        // 등록하고자 하는 ShoppingItem에 설정되어 있는 ShoppingCart 객체가 현재 객체가 아니면 ShoppingItem 객체에 설정되어 있는 ShoppingCart 객채에서 등록하고자 하는 ShoppingItem 객체를 지운다
-        // 왜냐면 추가하고자 하는 ShoppingItem 객체가 현재 ShoppingCart 객체에 추가될 것이기 때문에 이 작업을 진행하지 않으면 추가하고자 하는 ShoppingItem 객체가 서로 다른 ShoppingCart 객체 두 군데에 존재해지기 때문이다
-        if(shoppingItem.getShoppingCart() != this) {
-            shoppingItem.getShoppingCart().removeShoppingItem(shoppingItem);
-            shoppingItem.setShoppingCart(this);
-        }
-
-        if(!shoppingItemSet.contains(shoppingItem)) {
-            shoppingItemSet.add(shoppingItem);
-        }
-    }
-
     public void removeShoppingItem(ShoppingItem shoppingItem) {
         // ShoppingItem의 shoppingCart 멤버변수를 null로 처리해야 하지만 이렇게 할 경우 해당 변수의 nullable을 false로 지정했기 때문에 DB 관련 작업에서 문제가 생긴다
         // ShoppingItem을 지우는 경우는 DB에서 삭제하는 경우뿐이 없기 때문에 따로 별도 처리는 하지 않았다

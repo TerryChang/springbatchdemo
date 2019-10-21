@@ -1,11 +1,11 @@
 spring:
   profiles:
-    active: h2
+    active: h2,log4jdbc
   jpa:
     hibernate:
       ddl-auto: create-drop
     generate-ddl: true
     properties:
       hibernate:
-        show_sql: true
-        format_sql: true
+        show_sql: false
+        format_sql: false

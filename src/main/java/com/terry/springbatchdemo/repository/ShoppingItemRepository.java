@@ -3,6 +3,7 @@ package com.terry.springbatchdemo.repository;
 import com.terry.springbatchdemo.entity.Product;
 import com.terry.springbatchdemo.entity.ShoppingItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -14,4 +15,10 @@ public interface ShoppingItemRepository extends JpaRepository<ShoppingItem, Long
 
     @Query("select shoppingItem from ShoppingItem shoppingItem where shoppingItem.product.idx = :productIdx")
     Optional<List<ShoppingItem>> findByProductIdx(@Param("productIdx") Long productIdx);
+
+    /*
+    @Modifying
+    @Query("delete from  ShoppingItem s where s.idx = :idx")
+    void deleteByIdx(@Param("idx") Long idx);
+     */
 }
