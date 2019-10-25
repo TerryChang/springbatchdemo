@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.*;
 @RunWith(SpringRunner.class)
 @ActiveProfiles("h2_log4jdbc")          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
 @DataJpaTest
-@AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
+@AutoConfigureTestDatabase(replace=AutoConfigureTestDatabase.Replace.NONE)
 public class UserEntityTest {
 
     @Autowired

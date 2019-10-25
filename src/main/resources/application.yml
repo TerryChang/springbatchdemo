@@ -9,3 +9,19 @@ spring:
       hibernate:
         show_sql: false
         format_sql: false
+# spring.batch.job.names 항목에 batch로 실행시킬 job 이름을 설정해주면
+# batch application에 여러개의 job이 설정되어 있어도 spring.batch.job.names 항목에 설정되어 있는 job만 실행이 된다
+# 여러개의 job을 실행시킬때는 job 이름간에 ,를 붙인다(ex : myjob1,yourjob2)
+# spring.batch.job.names 항목에 NONE을 설정하면 어떠한 job도 실행시키지 않는다
+# spring.batch.job.names 프로퍼티 등록 자체를 아예 안하면 모든 job을 실행하는 것이 기본 설정이다
+# ${job.name:NONE} 의 의미는 파라미터로 --job.name=myjob1,yourjob2 라고 설정하면 myjob1,yourjob2 가 spring.batch.job.names 항목에 설정되어서
+#  job 이름이 myjob1 과 yourjob2 인 job이 실행된다
+# 만약 이 파라미터를 실행할때 설정 자체를 안해버리면 NONE이 설정되기 때문에 위에서 설명했던 내용대로 어떠한 job도 실행되지 않는다
+# 이 설정은 일단 주석으로 돌려놓는다(테스트 다 마치면 그때 하는걸로..)
+#  batch:
+#    job:
+#      names: ${job.name:NONE}
+logfile:
+  path: /home/samplelogs
+  fileNamePrefix: buylog-
+  fileExt: log

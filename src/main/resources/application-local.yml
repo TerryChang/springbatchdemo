@@ -1,0 +1,4 @@
+logfile:
+  path: D:/projects/intellij_projects/springbootstudy/samplelogs
+  fileNamePrefix: buylog-
+  fileExt: log
