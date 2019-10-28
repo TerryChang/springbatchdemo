@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.*;
 @ActiveProfiles({"h2_log4jdbc", "local"})          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
 @SpringBatchTest
 @SpringBootTest
-@ContextConfiguration(classes = {BatchJobConfig.class, TestBatchConfig.class})
+// @ContextConfiguration(classes = {BatchJobConfig.class, TestBatchConfig.class})
 @AutoConfigureTestDatabase(replace=AutoConfigureTestDatabase.Replace.NONE)
 public class ReadFileWriteDatabaseBatchTest {
 

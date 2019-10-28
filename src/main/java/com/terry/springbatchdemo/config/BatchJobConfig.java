@@ -1,14 +1,18 @@
 package com.terry.springbatchdemo.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.terry.springbatchdemo.entity.ShoppingCart;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.*;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.JobScope;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.JpaItemWriter;
-import org.springframework.batch.item.json.JacksonJsonObjectReader;
-import org.springframework.batch.item.json.JsonItemReader;
-import org.springframework.batch.item.json.builder.JsonItemReaderBuilder;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -58,12 +62,31 @@ public class BatchJobConfig {
     public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory) throws Exception {
         return stepBuilderFactory.get("readFileWriteDatabaseStep")
                 .<ShoppingCart, ShoppingCart>chunk(10)// chunk 메소드에 반드시 작업할 타입을 명시해주어야 한다. 그러지 않으면 processor 메소드에서 해당 작업을 하기 위해 만들어 놓은 메소드를 찾질 못한다(chunk 메소드에 타입을 명시하지 않으면 <Object, Object>로 인식하기 때문이다
-                .reader(shoppingCartJsonItemReader())
+                .reader(shoppingCartFlatFileItemReader())
                 .processor(shoppingCartItemProcessor())
                 .writer(shoppingCartJpaItemWriter())
                 .build();
     }
 
+    @Bean
+    public JacksonJsonLineMapper<ShoppingCart> jacksonJsonLineMapper() {
+        return new JacksonJsonLineMapper<ShoppingCart>(new ObjectMapper(), new TypeReference<ShoppingCart>(){}, 15, -1);
+    }
+
+    @Bean
+    public FlatFileItemReader<ShoppingCart> shoppingCartFlatFileItemReader() {
+        String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String todayString2 = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String filePathName = filePath + "/" + fileNamePrefix + todayString + "." + fileExt;
+
+        return new FlatFileItemReaderBuilder<ShoppingCart>()
+                .lineMapper(jacksonJsonLineMapper())
+                .encoding("UTF-8")
+                .resource(new FileSystemResource(filePathName))
+                .name("shoppingCartJsonItemReader")
+                .build();
+    }
+    /*
     @Bean
     public JsonItemReader<ShoppingCart> shoppingCartJsonItemReader() throws Exception{
         String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -75,6 +98,7 @@ public class BatchJobConfig {
                 .name("shoppingCartJsonItemReader")
                 .build();
     }
+    */
 
     @Bean
     public ItemProcessor<ShoppingCart, ShoppingCart> shoppingCartItemProcessor() {
