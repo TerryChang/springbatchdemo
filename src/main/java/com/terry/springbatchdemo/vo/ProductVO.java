@@ -5,11 +5,11 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class Product {
+public class ProductVO {
     private String productId;
     private int productPrice;
 
-    public Product() {
+    public ProductVO() {
 
     }
 }
