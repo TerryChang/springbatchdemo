@@ -30,6 +30,7 @@ public class ShoppingCartVOLineMapper implements LineMapper<ShoppingCartVO> {
             }
         }
 
-        return objectMapper.readValue(jobLine, ShoppingCartVO.class);
+        ShoppingCartVO shoppingCartVO = objectMapper.readValue(jobLine, ShoppingCartVO.class);
+        return  shoppingCartVO;
     }
 }

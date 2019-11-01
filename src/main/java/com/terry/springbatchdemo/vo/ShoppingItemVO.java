@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public class ShoppingItemVO {
-    private ProductVO productVO;
+    private ProductVO product;
     private int cnt;
     private int totalPriceByProduct;
 
@@ -12,9 +12,9 @@ public class ShoppingItemVO {
 
     }
 
-    public ShoppingItemVO(ProductVO productVO, int cnt) {
-        this.productVO = productVO;
+    public ShoppingItemVO(ProductVO productVO, int cnt, int totalPriceByProduct) {
+        this.product = productVO;
         this.cnt = cnt;
-        this.totalPriceByProduct = productVO.getProductPrice() * cnt;
+        this.totalPriceByProduct = totalPriceByProduct;
     }
 }

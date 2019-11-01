@@ -8,25 +8,17 @@ import java.util.List;
 @Getter
 public class ShoppingCartVO {
     private String loginId;
-    List<ShoppingItemVO> shoppingItemVOList = new ArrayList<>();
+    List<ShoppingItemVO> shoppingItemList = new ArrayList<>();
     private long totalPrice;
 
     public ShoppingCartVO() {
 
     }
 
-    public ShoppingCartVO(String loginId, List<ShoppingItemVO> shoppingItemVOList) {
+    public ShoppingCartVO(String loginId, List<ShoppingItemVO> shoppingItemVOList, long totalPrice) {
         this.loginId = loginId;
-        this.shoppingItemVOList = shoppingItemVOList;
-        calculateTotalPrice();
+        this.shoppingItemList = shoppingItemVOList;
+        this.totalPrice = totalPrice;
     }
 
-    public void calculateTotalPrice() {
-        totalPrice = 0L;
-        shoppingItemVOList.forEach(
-                shoppingItemVO -> {
-                    totalPrice += shoppingItemVO.getTotalPriceByProduct();
-                }
-        );
-    }
 }

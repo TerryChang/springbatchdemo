@@ -2,7 +2,11 @@ package com.terry.springbatchdemo.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.terry.springbatchdemo.ShoppingCartVOLineMapper;
+import com.terry.springbatchdemo.config.json.ProductVODeserializer;
+import com.terry.springbatchdemo.config.json.ShoppingCartVODeserializer;
+import com.terry.springbatchdemo.config.json.ShoppingItemVODeserializer;
 import com.terry.springbatchdemo.entity.Product;
 import com.terry.springbatchdemo.entity.ShoppingCart;
 import com.terry.springbatchdemo.entity.ShoppingItem;
@@ -32,6 +36,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 
 import javax.persistence.EntityManagerFactory;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
@@ -55,14 +60,6 @@ public class BatchJobConfig {
     private final ShoppingItemRepository shoppingItemRepository;
     private final ShoppingCartRepository shoppingCartRepository;
 
-    public BatchJobConfig() {
-        this.filePath = null;
-        this.fileNamePrefix = null;
-        this.fileExt = null;
-        this.entityManagerFactory = null;
-    }
-
-    @Autowired
     public BatchJobConfig(@Value("${logfile.path}") String filePath
                             , @Value("${logfile.fileNamePrefix}") String fileNamePrefix
                             ,  @Value("${logfile.fileExt}") String fileExt
@@ -79,6 +76,26 @@ public class BatchJobConfig {
         this.productRepository = productRepository;
         this.shoppingItemRepository = shoppingItemRepository;
         this.shoppingCartRepository = shoppingCartRepository;
+    }
+
+    /**
+     * Custom Json Serializer 나 Custom Json Deserializer 를 등록하기 위해 ObjectMapper Bean을 별도로 생성한다
+     * Spring Boot 에서는 자체적으로 ObjectMapper 를 Bean 으로 생성하지 않고 있기 때문에 이 작업이 가능하다
+     * 이것을 확인할 수 있는 방법은 클래스의 Member 변수로 ObjectMapper 타입 변수를 하나 선언한뒤
+     * 생성자에서 이를 injection 받게 해주면 Spring이 ObjectMapper를 bean으로 생성했다면 injection이 이루어 질 것이고
+     * 그렇지 않으면 injection에 실패할 것이기 때문에 알 수 있다
+     * @return
+     */
+    @Bean
+    public ObjectMapper objectMapper() throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addDeserializer(ProductVO.class, new ProductVODeserializer(objectMapper));
+        simpleModule.addDeserializer(ShoppingItemVO.class, new ShoppingItemVODeserializer(objectMapper));
+        simpleModule.addDeserializer(ShoppingCartVO.class, new ShoppingCartVODeserializer(objectMapper));
+        objectMapper.registerModule(simpleModule);
+
+        return objectMapper;
     }
 
     @Bean
@@ -146,9 +163,9 @@ public class BatchJobConfig {
                 throw new BatchException("ShoppingItem - Not Exists User : " + item.getLoginId());
             }
 
-            List<ShoppingItemVO> shoppingItemVOList = item.getShoppingItemVOList();
+            List<ShoppingItemVO> shoppingItemVOList = item.getShoppingItemList();
             for(ShoppingItemVO shoppingItem : shoppingItemVOList) {
-                ProductVO productVO = shoppingItem.getProductVO();
+                ProductVO productVO = shoppingItem.getProduct();
                 long productPrice = productVO.getProductPrice();
                 int cnt = shoppingItem.getCnt();
                 long totalPriceByProduct = shoppingItem.getTotalPriceByProduct();
