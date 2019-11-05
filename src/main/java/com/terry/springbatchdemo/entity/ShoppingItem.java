@@ -112,8 +112,8 @@ public class ShoppingItem {
             this.shoppingCart.getShoppingItemSet().remove(this);
         }
         this.shoppingCart = shoppingCart;
-        if(shoppingCart != null) {
-            shoppingCart.getShoppingItemSet().add(this);
+        if(shoppingCart != null && !shoppingCart.getShoppingItemSet().contains(this)) {
+            shoppingCart.addShoppingItem(this);
         }
     }
 }

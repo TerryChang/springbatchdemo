@@ -35,13 +35,12 @@ public class ShoppingCartVODeserializer extends StdDeserializer<ShoppingCartVO> 
         JsonNode jsonNode = p.getCodec().readTree(p);
         ShoppingCartVO shoppingCartVO = null;
         String loginId = jsonNode.get("loginId").textValue();
-        long totalPrice = jsonNode.longValue();
+        long totalPrice = jsonNode.get("totalPrice").longValue();
         JsonNode shoppingItemListJsonNode = jsonNode.get("shoppingItemList");
         if(shoppingItemListJsonNode.isArray()) {
             List<ShoppingItemVO> shoppingItemList = new ArrayList<>();
             for(JsonNode item : shoppingItemListJsonNode) {
-                JsonNode productJsonNode = item.get("product");
-                ShoppingItemVO shoppingItemVO = objectMapper.convertValue(productJsonNode, ShoppingItemVO.class);
+                ShoppingItemVO shoppingItemVO = objectMapper.convertValue(item, ShoppingItemVO.class);
                 shoppingItemList.add(shoppingItemVO);
             }
             shoppingCartVO = new ShoppingCartVO(loginId, shoppingItemList, totalPrice);

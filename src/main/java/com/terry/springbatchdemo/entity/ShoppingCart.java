@@ -1,5 +1,6 @@
 package com.terry.springbatchdemo.entity;
 
+import com.terry.springbatchdemo.vo.ShoppingItemVO;
 import lombok.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -45,11 +46,11 @@ public class ShoppingCart {
     private Long totalPrice = 0L;
 
     @Builder
-    public ShoppingCart(User user, Set<ShoppingItem> shoppingItemSet) {
+    public ShoppingCart(User user) {
         this.user = user;
         user.getShoppingCartList().add(this);
-        this.shoppingItemSet = shoppingItemSet;
-        shoppingItemSet.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPrice();});
+        // this.shoppingItemSet = shoppingItemSet;
+        // shoppingItemSet.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPrice();});
     }
 
     @Id
@@ -62,6 +63,16 @@ public class ShoppingCart {
 
     private void setIdx(Long idx) {
         this.idx = idx;
+    }
+
+    private void calculateTotalPrice() {
+        shoppingItemSet.forEach(shoppingItem -> totalPrice += shoppingItem.getTotalPrice());
+    }
+    public void addShoppingItem(ShoppingItem shoppingItem) {
+        shoppingItem.setShoppingCart(this);
+        shoppingItemSet.add(shoppingItem);
+        calculateTotalPrice();
+
     }
 
     public void removeShoppingItem(ShoppingItem shoppingItem) {

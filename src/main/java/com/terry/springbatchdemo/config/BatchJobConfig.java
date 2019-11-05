@@ -1,9 +1,8 @@
 package com.terry.springbatchdemo.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.terry.springbatchdemo.ShoppingCartVOLineMapper;
+import com.terry.springbatchdemo.config.json.ShoppingCartVOLineMapper;
 import com.terry.springbatchdemo.config.json.ProductVODeserializer;
 import com.terry.springbatchdemo.config.json.ShoppingCartVODeserializer;
 import com.terry.springbatchdemo.config.json.ShoppingItemVODeserializer;
@@ -29,7 +28,6 @@ import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -107,21 +105,21 @@ public class BatchJobConfig {
     }
     @Bean
     @JobScope
-    public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory) throws Exception {
+    public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory, ObjectMapper objectMapper) throws Exception {
         return stepBuilderFactory.get("readFileWriteDatabaseStep")
                 .<ShoppingCartVO, ShoppingCart>chunk(10)// chunk 메소드에 반드시 작업할 타입을 명시해주어야 한다. 그러지 않으면 processor 메소드에서 해당 작업을 하기 위해 만들어 놓은 메소드를 찾질 못한다(chunk 메소드에 타입을 명시하지 않으면 <Object, Object>로 인식하기 때문이다
-                .reader(shoppingCartFlatFileItemReader())
+                .reader(shoppingCartFlatFileItemReader(objectMapper))
                 .processor(shoppingCartItemProcessor())
                 .writer(shoppingCartJpaItemWriter())
                 .build();
     }
 
     @Bean
-    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader() {
+    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(ObjectMapper objectMapper) {
         String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String todayString2 = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String filePathName = filePath + "/" + fileNamePrefix + todayString + "." + fileExt;
-        LineMapper<ShoppingCartVO> shoppingCartVOLineMapper = new ShoppingCartVOLineMapper(new ObjectMapper(), 15, -1);
+        LineMapper<ShoppingCartVO> shoppingCartVOLineMapper = new ShoppingCartVOLineMapper(objectMapper, 15, -1);
 
         return new FlatFileItemReaderBuilder<ShoppingCartVO>()
                 .lineMapper(shoppingCartVOLineMapper)
@@ -157,12 +155,12 @@ public class BatchJobConfig {
         return  item -> {
             ShoppingCart shoppingCartEntity = null;
             Set<ShoppingItem> shoppingItemEntitySet = new LinkedHashSet<>();
-            User userEntity = userRepository.findByLoginId(item.getLoginId());
-            if(userEntity == null) {
+            Optional<User> optionalUser = userRepository.findByLoginId(item.getLoginId());
+            if(!optionalUser.isPresent()) {
                 // 사용자가 없다는 예외 던지는 부분
                 throw new BatchException("ShoppingItem - Not Exists User : " + item.getLoginId());
             }
-
+            User userEntity = optionalUser.get();
             List<ShoppingItemVO> shoppingItemVOList = item.getShoppingItemList();
             for(ShoppingItemVO shoppingItem : shoppingItemVOList) {
                 ProductVO productVO = shoppingItem.getProduct();
@@ -175,7 +173,7 @@ public class BatchJobConfig {
                     throw new BatchException("ShoppingItem - Mismatch product price * cnt and totalPrice");
                 }
 
-                Optional<Product> optionalProduct = productRepository.findById(new Long(productVO.getProductId()));
+                Optional<Product> optionalProduct = productRepository.findById(productVO.getIdx());
                 Product productEntity = null;
                 if(optionalProduct.isPresent()) {
                     productEntity = optionalProduct.get();
@@ -192,13 +190,13 @@ public class BatchJobConfig {
                     shoppingItemEntitySet.add(shoppingItemEntity);
                 } else {
                     // 상품이 없다는 예외 던지는 부분
+                    throw new BatchException("Product - Product idx " + productVO.getIdx() + " is not exists");
                 }
             }
 
             shoppingCartEntity = new ShoppingCart(userEntity, shoppingItemEntitySet);
             return shoppingCartEntity;
         };
-        // return null;
     }
 
     @Bean

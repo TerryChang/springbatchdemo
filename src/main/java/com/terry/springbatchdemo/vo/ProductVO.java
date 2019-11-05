@@ -1,15 +1,19 @@
 package com.terry.springbatchdemo.vo;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class ProductVO {
-    private String productId;
+    private Long idx;
+    private String productName;
     private int productPrice;
 
-    public ProductVO() {
-
+    @Builder
+    public ProductVO(Long idx, String productName, int productPrice) {
+        this.idx = idx;
+        this.productName = productName;
+        this.productPrice = productPrice;
     }
 }

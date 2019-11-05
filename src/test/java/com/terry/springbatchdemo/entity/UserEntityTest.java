@@ -15,6 +15,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,7 +41,7 @@ public class UserEntityTest {
 
     @Before
     public void before() {
-        User user = userRepository.save(User.builder().name("오라클").loginId("oracle.com").build());
+        User user = userRepository.save(User.builder().name("페이스북").loginId("facebook.com").build());
         userIdx = user.getIdx();
         ShoppingCart shoppingCart = shoppingCartRepository.save(ShoppingCart.builder().user(user).shoppingItemSet(new LinkedHashSet<>()).build());
         testEntityManager.flush();
@@ -50,7 +51,9 @@ public class UserEntityTest {
 
     @Test
     public void 제대로_생성되었는지_테스트() {
-        User user = userRepository.findByLoginId("oracle.com");
+        Optional<User> optionalUser = userRepository.findByLoginId("oracle.com");
+        assertThat(optionalUser.isPresent(), is(true));
+        User user = optionalUser.get();
         assertThat(user.getName(), is("오라클"));
         assertThat(user.getLoginId(), is("oracle.com"));
         logger.info("제대로 생성되었는지 테스트의 User 객체 : {}", user.toString());
@@ -111,6 +114,38 @@ public class UserEntityTest {
 
         optionalUser = userRepository.findById(userIdx);
         assertThat(optionalUser.isPresent(), is(false));
+
+    }
+
+    /**
+     * 이 테스트 코드를 만든 이유는 배치 코딩을 진행하면서 진행되어지는 SQL문을 보니
+     * 같은 타입의 엔티티 객체를 여러개 저장할때 먼저 그 여러개 갯수 만큼 시퀀스를 돌려서 시퀀스를 구하고 그 다음에 insert 문이 실행되는것이 확인되었다.
+     * 개인적인 생각은 select sequence -> insert -> select sequence -> insert 이렇게 흘러가는줄 알았는데
+     * 그게 아니라 select sequence -> select sequence -> insert -> insert 이렇게 실행이 되는 것이 확인되었기 때문이다.
+     * 그래서 이를 확인하느라 아래와 같이 User Entity 2개를 등록하는 테스트 코드를 만들어서 여기에서 찍히는 SQL 로그를 보고 이를 확인하려 했던것이다.
+     * 아마 추측엔 flush 하는 과정에서 내가 insert 해야 할 객체가 영속성 컨텍스트에 이미 있기 때문에 먼저 해당 sequence들만 돌려서 엔티티 객체에 설정하는 작업을 모두 다 마친뒤
+     * 그 다음에 객체들을 DB에 넣거나 수정하는 작업을 하는것이 아닐까 하는 생각을 하게 된다
+     */
+    @Test
+    public void 사용자_두명_등록_테스트() {
+        User twitterUser = userRepository.save(User.builder().name("트위터").loginId("twitter.com").build());
+        User kakaoUser = userRepository.save(User.builder().name("카카오").loginId("kakao.com").build());
+        List<User> userList = new ArrayList<>();
+        userList.add(twitterUser);
+        userList.add(kakaoUser);
+        userRepository.saveAll(userList);
+        testEntityManager.flush();
+        testEntityManager.clear();
+        Optional<User> optionalTwitterUser = userRepository.findByLoginId("twitter.com");
+        assertThat(optionalTwitterUser.isPresent(), is(true));
+        User selectTwitterUser = optionalTwitterUser.get();
+        assertThat(selectTwitterUser.getName(), is("트위터"));
+        assertThat(selectTwitterUser.getLoginId(), is("twitter.com"));
+        Optional<User> optionalKakaoUser = userRepository.findByLoginId("kakao.com");
+        assertThat(optionalKakaoUser.isPresent(), is(true));
+        User selectKakaoUser = optionalKakaoUser.get();
+        assertThat(selectKakaoUser.getName(), is("카카오"));
+        assertThat(selectKakaoUser.getLoginId(), is("kakao.com"));
 
     }
 }

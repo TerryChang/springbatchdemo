@@ -1,4 +1,4 @@
-package com.terry.springbatchdemo;
+package com.terry.springbatchdemo.config.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.terry.springbatchdemo.vo.ShoppingCartVO;

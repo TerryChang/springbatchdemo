@@ -31,8 +31,8 @@ public class ProductVODeserializer extends StdDeserializer<ProductVO> {
     @Override
     public ProductVO deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
         JsonNode jsonNode = p.getCodec().readTree(p);
-        String productId = jsonNode.get("productId").textValue();
+        Long idx = jsonNode.get("idx").longValue();
         int productPrice = jsonNode.get("productPrice").intValue();
-        return new ProductVO(productId, productPrice);
+        return new ProductVO(idx, null, productPrice);
     }
 }
