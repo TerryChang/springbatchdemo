@@ -65,28 +65,25 @@ public class ShoppingCart {
         this.idx = idx;
     }
 
-    private void calculateTotalPrice() {
-        shoppingItemSet.forEach(shoppingItem -> totalPrice += shoppingItem.getTotalPrice());
+    public void setUser(User user) {
+        if(this.user != null) {
+            this.user.getShoppingCartList().remove(this);
+        }
+        this.user = user;
+        if(user != null) user.getShoppingCartList().add(this);
     }
+
     public void addShoppingItem(ShoppingItem shoppingItem) {
-        shoppingItem.setShoppingCart(this);
         shoppingItemSet.add(shoppingItem);
         calculateTotalPrice();
-
     }
 
     public void removeShoppingItem(ShoppingItem shoppingItem) {
-        // ShoppingItem의 shoppingCart 멤버변수를 null로 처리해야 하지만 이렇게 할 경우 해당 변수의 nullable을 false로 지정했기 때문에 DB 관련 작업에서 문제가 생긴다
-        // ShoppingItem을 지우는 경우는 DB에서 삭제하는 경우뿐이 없기 때문에 따로 별도 처리는 하지 않았다
-        /*
-        if(shoppingItemSet.contains(shoppingItem)) {
-            shoppingItem.setShoppingCart(null);
-            shoppingItemSet.remove(shoppingItem);
-        }
-        */
-        if(shoppingItemSet.contains(shoppingItem)) {
-            shoppingItemSet.remove(shoppingItem);
-        }
-        shoppingItem.setShoppingCart(null);
+        shoppingItemSet.remove(shoppingItem);
+        calculateTotalPrice();
+    }
+
+    private void calculateTotalPrice() {
+        shoppingItemSet.forEach(shoppingItem -> totalPrice += shoppingItem.getTotalPrice());
     }
 }

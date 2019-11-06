@@ -43,7 +43,6 @@ public class UserEntityTest {
     public void before() {
         User user = userRepository.save(User.builder().name("페이스북").loginId("facebook.com").build());
         userIdx = user.getIdx();
-        ShoppingCart shoppingCart = shoppingCartRepository.save(ShoppingCart.builder().user(user).shoppingItemSet(new LinkedHashSet<>()).build());
         testEntityManager.flush();
         testEntityManager.clear();
         logger.info("before method user : {}", user.toString());
@@ -128,6 +127,7 @@ public class UserEntityTest {
      */
     @Test
     public void 사용자_두명_등록_테스트() {
+
         User twitterUser = userRepository.save(User.builder().name("트위터").loginId("twitter.com").build());
         User kakaoUser = userRepository.save(User.builder().name("카카오").loginId("kakao.com").build());
         List<User> userList = new ArrayList<>();

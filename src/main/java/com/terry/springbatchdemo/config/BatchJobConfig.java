@@ -153,14 +153,14 @@ public class BatchJobConfig {
         };
         */
         return  item -> {
-            ShoppingCart shoppingCartEntity = null;
-            Set<ShoppingItem> shoppingItemEntitySet = new LinkedHashSet<>();
             Optional<User> optionalUser = userRepository.findByLoginId(item.getLoginId());
             if(!optionalUser.isPresent()) {
                 // 사용자가 없다는 예외 던지는 부분
                 throw new BatchException("ShoppingItem - Not Exists User : " + item.getLoginId());
             }
             User userEntity = optionalUser.get();
+            ShoppingCart shoppingCartEntity = new ShoppingCart(userEntity);
+
             List<ShoppingItemVO> shoppingItemVOList = item.getShoppingItemList();
             for(ShoppingItemVO shoppingItem : shoppingItemVOList) {
                 ProductVO productVO = shoppingItem.getProduct();
@@ -186,15 +186,12 @@ public class BatchJobConfig {
                         throw new BatchException("ShoppingItem - Mismatch database product price * cnt and log total price");
                     }
                     ShoppingItem shoppingItemEntity = new ShoppingItem(productEntity, cnt);
-                    shoppingItemEntity.setShoppingCart(shoppingCartEntity); // 일단은 null로 되어 있는 shoppingCartEntity 변수를 설정하고 맨 마지막에 이 변수를 초기화 시킨다
-                    shoppingItemEntitySet.add(shoppingItemEntity);
+                    shoppingItemEntity.setShoppingCart(shoppingCartEntity); // setShoppingCart 메소드에서 내부적으로 ShoppingCart 엔티티 객체에 ShoppingItem 객체를 추가해주고 있다
                 } else {
                     // 상품이 없다는 예외 던지는 부분
                     throw new BatchException("Product - Product idx " + productVO.getIdx() + " is not exists");
                 }
             }
-
-            shoppingCartEntity = new ShoppingCart(userEntity, shoppingItemEntitySet);
             return shoppingCartEntity;
         };
     }

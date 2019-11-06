@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.*;
 @ActiveProfiles("h2_log4jdbc")          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
 @DataJpaTest
 @AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
-public class ShoppingCartVOTest {
+public class ShoppingCartEntityTest {
 
     @Autowired
     TestEntityManager testEntityManager;
@@ -75,7 +75,7 @@ public class ShoppingCartVOTest {
         shoppingItemSet.add(shoppingItem2);
         shoppingItemSet.add(shoppingItem3);
 
-        ShoppingCart shoppingCart = ShoppingCart.builder().user(user).shoppingItemSet(shoppingItemSet).build();
+        ShoppingCart shoppingCart = ShoppingCart.builder().user(user).build();
 
         shoppingItem1.setShoppingCart(shoppingCart);
         shoppingItem2.setShoppingCart(shoppingCart);
