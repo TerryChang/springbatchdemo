@@ -1,9 +1,10 @@
 spring:
   datasource:
     hikari:
-#      url: jdbc:h2:tcp://localhost:9092/mem:testdb;MVCC=TRUE
+#      jdbc-url: jdbc:log4jdbc:h2:tcp://localhost:9092/mem:testdb;MVCC=TRUE
 #      url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
-      jdbc-url: jdbc:log4jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+#      jdbc-url: jdbc:log4jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+      jdbc-url: jdbc:log4jdbc:h2:tcp://localhost:9092/springbatch
       username: sa
       password:
       driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
@@ -11,10 +12,10 @@ spring:
     data: classpath*:data-h2.sql
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
-#h2:
-#  tcpServer:
-#    enabled: true
-#    port: 9092
-#  webServer:
-#    enabled: false
-#    port: 8082
+h2:
+  tcpServer:
+    enabled: true
+    port: 9092
+  webServer:
+    enabled: false
+    port: 8082

@@ -1,5 +1,6 @@
 package com.terry.springbatchdemo.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.h2.tools.Server;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,27 +15,49 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 
 @Configuration
-// @Profile("h2")
+@Profile({"h2", "h2_log4jdbc"})
 @Slf4j
 public class H2Config {
 
-    /*
-    @Bean(name = "h2Server", initMethod = "start", destroyMethod = "stop")
-    @ConditionalOnExpression("${h2.tcpServer.enabled:false}")
-    public Server createTcpServer(@Value("${h2.tcpServer.port:9092}") String h2TcpPort) throws SQLException {
-        logger.info("H2 Server Start");
-        Server h2Server = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", h2TcpPort).start();
-        return h2Server;
-    }
-     */
-
-    /*
     @Bean
     @ConfigurationProperties("spring.datasource.hikari")
-    public DataSource h2DataSource() throws SQLException {
-        logger.info("DataSource Settings start");
-        return new com.zaxxer.hikari.HikariDataSource();
-    }
-     */
+    public DataSource dataSource() throws SQLException {
+        Server server = persistenceRun(9092, "springbatch", "batchdb", DBFilePath.relative);
+        // Server server = memoryRun(9092);
+        if(server.isRunning(true)){
+            logger.info("server run success");
+        }
+        logger.info("h2 server url = {}", server.getURL());
 
+        return new HikariDataSource();
+    }
+
+    private Server persistenceRun(int port, String dbName, String dbFileName, DBFilePath dbFilePath) throws SQLException {
+        return Server.createTcpServer(
+                "-tcp",
+                "-tcpAllowOthers",
+                "-ifNotExists",
+                "-tcpPort", port+"", "-key", dbName, dbFilePath.dbFilePathValue(dbFileName)).start();
+    }
+
+    private Server memoryRun(int port) throws SQLException {
+        return Server.createTcpServer(
+                "-tcp",
+                "-tcpAllowOthers",
+                "-ifNotExists",
+                "-tcpPort", port+"").start();
+    }
+
+    enum DBFilePath {
+        absolute("~/"), relative("./");
+        String prefix;
+
+        DBFilePath(String prefix) {
+            this.prefix = prefix;
+        }
+
+        public String dbFilePathValue(String dbFileName) {
+            return prefix + dbFileName;
+        }
+    }
 }

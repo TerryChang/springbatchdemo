@@ -1,11 +1,10 @@
 package com.terry.springbatchdemo.config;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.terry.springbatchdemo.config.json.ShoppingCartVOLineMapper;
-import com.terry.springbatchdemo.config.json.ProductVODeserializer;
-import com.terry.springbatchdemo.config.json.ShoppingCartVODeserializer;
-import com.terry.springbatchdemo.config.json.ShoppingItemVODeserializer;
+import com.terry.springbatchdemo.config.json.*;
 import com.terry.springbatchdemo.entity.Product;
 import com.terry.springbatchdemo.entity.ShoppingCart;
 import com.terry.springbatchdemo.entity.ShoppingItem;
@@ -14,18 +13,19 @@ import com.terry.springbatchdemo.repository.ProductRepository;
 import com.terry.springbatchdemo.repository.ShoppingCartRepository;
 import com.terry.springbatchdemo.repository.ShoppingItemRepository;
 import com.terry.springbatchdemo.repository.UserRepository;
+import com.terry.springbatchdemo.vo.LineResultVO;
 import com.terry.springbatchdemo.vo.ProductVO;
 import com.terry.springbatchdemo.vo.ShoppingCartVO;
 import com.terry.springbatchdemo.vo.ShoppingItemVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.JobScope;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.*;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileParseException;
 import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,10 +37,8 @@ import javax.persistence.EntityManagerFactory;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @EnableBatchProcessing 어노테이션을 Spring Boot의 Application 클래스에 명시할경우 @DataJpaTest와 문제를 일으키는 상황이 있다(@DataJpaTest 관련 모든 테스트 클래스에서 flush 하는 과정에 문제가 발생)
@@ -48,6 +46,7 @@ import java.util.Set;
  */
 @Configuration
 @EnableBatchProcessing
+@Slf4j
 public class BatchJobConfig {
     private final String filePath;
     private final String fileNamePrefix;
@@ -97,6 +96,12 @@ public class BatchJobConfig {
     }
 
     @Bean
+    @StepScope
+    public DataShareBean dataShareBean() {
+        return new DataShareBean();
+    }
+
+    @Bean
     public Job readFileWriteDatabaseJob(JobBuilderFactory jobBuilderFactory, Step step) {
         return jobBuilderFactory.get("readFileWriteDatabaseJob")
                 .preventRestart()
@@ -105,24 +110,37 @@ public class BatchJobConfig {
     }
     @Bean
     @JobScope
-    public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory, ObjectMapper objectMapper) throws Exception {
+    public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory, ObjectMapper objectMapper, DataShareBean dataShareBean) throws Exception {
         return stepBuilderFactory.get("readFileWriteDatabaseStep")
                 .<ShoppingCartVO, ShoppingCart>chunk(10)// chunk 메소드에 반드시 작업할 타입을 명시해주어야 한다. 그러지 않으면 processor 메소드에서 해당 작업을 하기 위해 만들어 놓은 메소드를 찾질 못한다(chunk 메소드에 타입을 명시하지 않으면 <Object, Object>로 인식하기 때문이다
-                .reader(shoppingCartFlatFileItemReader(objectMapper))
-                .processor(shoppingCartItemProcessor())
-                .writer(shoppingCartJpaItemWriter())
+                .reader(shoppingCartFlatFileItemReader(objectMapper, dataShareBean))
+                .processor(customItemProcessor())
+                // .writer(shoppingCartJpaItemWriter())
+                .writer(customShoppingCartJpaItemWriter())
+                .faultTolerant()
+                .skipLimit(10)
+                .skip(BatchException.class)
+                .skip(JsonParseException.class)
+                .skip(JsonMappingException.class)
+                // .writer(shoppingCartDebugItemWriter())
+                // .writer(shoppingCartLoggingItemWriter())
                 .build();
+
+        // reader에서 발생할수 있는 예외
+        // IOException, JsonParseException, JsonMappingException
     }
 
     @Bean
-    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(ObjectMapper objectMapper) {
+    @StepScope
+    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(ObjectMapper objectMapper, DataShareBean dataShareBean) {
         String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String todayString2 = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String filePathName = filePath + "/" + fileNamePrefix + todayString + "." + fileExt;
-        LineMapper<ShoppingCartVO> shoppingCartVOLineMapper = new ShoppingCartVOLineMapper(objectMapper, 15, -1);
+        // LineMapper<LineResultVO> lineResultVOLineMapper = new LineResultVOLineMapper(objectMapper, 15, -1);
+        LineMapper<ShoppingCartVO> ShoppingCartVOLineMapper = new ShoppingCartVOLineMapper(objectMapper, 15, -1, dataShareBean);
 
         return new FlatFileItemReaderBuilder<ShoppingCartVO>()
-                .lineMapper(shoppingCartVOLineMapper)
+                .lineMapper(ShoppingCartVOLineMapper)
                 .encoding("UTF-8")
                 .resource(new FileSystemResource(filePathName))
                 .name("shoppingCartJsonItemReader")
@@ -143,63 +161,38 @@ public class BatchJobConfig {
     */
 
     @Bean
-    public ItemProcessor<ShoppingCartVO, ShoppingCart> shoppingCartItemProcessor() throws BatchException {
-        /*
-        return new ItemProcessor<ShoppingCart, ShoppingCart>() {
-            @Override
-            public ShoppingCart process(ShoppingCart item) throws Exception {
-                return item;
-            }
-        };
-        */
-        return  item -> {
-            Optional<User> optionalUser = userRepository.findByLoginId(item.getLoginId());
-            if(!optionalUser.isPresent()) {
-                // 사용자가 없다는 예외 던지는 부분
-                throw new BatchException("ShoppingItem - Not Exists User : " + item.getLoginId());
-            }
-            User userEntity = optionalUser.get();
-            ShoppingCart shoppingCartEntity = new ShoppingCart(userEntity);
-
-            List<ShoppingItemVO> shoppingItemVOList = item.getShoppingItemList();
-            for(ShoppingItemVO shoppingItem : shoppingItemVOList) {
-                ProductVO productVO = shoppingItem.getProduct();
-                long productPrice = productVO.getProductPrice();
-                int cnt = shoppingItem.getCnt();
-                long totalPriceByProduct = shoppingItem.getTotalPriceByProduct();
-
-                if(productPrice * cnt != totalPriceByProduct) {
-                    // 상품단가 * 갯수 != 상품별 총 가격일 경우 맞지 않다고 예외를 던지는 부분
-                    throw new BatchException("ShoppingItem - Mismatch product price * cnt and totalPrice");
-                }
-
-                Optional<Product> optionalProduct = productRepository.findById(productVO.getIdx());
-                Product productEntity = null;
-                if(optionalProduct.isPresent()) {
-                    productEntity = optionalProduct.get();
-                    if(productEntity.getProductPrice() != productPrice) {
-                        // 상품 단가가 등록되어 있는 상품단가와 틀리다는 예외를 던지는 부분
-                        throw new BatchException("ShoppingItem - Mismatch already database product price and log product price");
-                    }
-                    if(productEntity.getProductPrice() * cnt != totalPriceByProduct) {
-                        // 등록된 상품 단가 * 갯수와 등록하고자 하는 총액이 틀리다는 예외를 던지는 부분
-                        throw new BatchException("ShoppingItem - Mismatch database product price * cnt and log total price");
-                    }
-                    ShoppingItem shoppingItemEntity = new ShoppingItem(productEntity, cnt);
-                    shoppingItemEntity.setShoppingCart(shoppingCartEntity); // setShoppingCart 메소드에서 내부적으로 ShoppingCart 엔티티 객체에 ShoppingItem 객체를 추가해주고 있다
-                } else {
-                    // 상품이 없다는 예외 던지는 부분
-                    throw new BatchException("Product - Product idx " + productVO.getIdx() + " is not exists");
-                }
-            }
-            return shoppingCartEntity;
-        };
+    @StepScope
+    public CustomItemProcessor customItemProcessor(DataShareBean dataShareBean) {
+        return new CustomItemProcessor(userRepository, productRepository, dataShareBean);
     }
 
     @Bean
+    @StepScope
     public JpaItemWriter<ShoppingCart> shoppingCartJpaItemWriter() {
         JpaItemWriter<ShoppingCart> jpaItemWriter = new JpaItemWriter<>();
         jpaItemWriter.setEntityManagerFactory(entityManagerFactory);
         return jpaItemWriter;
+    }
+
+    @Bean
+    @StepScope
+    public CustomShoppingCartJpaItemWriter customShoppingCartJpaItemWriter(DataShareBean dataShareBean) {
+        CustomShoppingCartJpaItemWriter customShoppingCartJpaItemWriter = new CustomShoppingCartJpaItemWriter();
+        customShoppingCartJpaItemWriter.setEntityManagerFactory(entityManagerFactory);
+        return customShoppingCartJpaItemWriter;
+    }
+
+    @Bean
+    @StepScope
+    public LoggingItemWriter<ShoppingCart> shoppingCartLoggingItemWriter() {
+        return new LoggingItemWriter<>("ShoppingCart : {}");
+    }
+
+    private ItemWriter<ShoppingCart> shoppingCartDebugItemWriter() {
+        return list -> {
+            for(ShoppingCart shoppingCart : list) {
+                logger.info("ShoppingCart : {}", shoppingCart);
+            }
+        };
     }
 }

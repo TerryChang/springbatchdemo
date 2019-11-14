@@ -73,17 +73,17 @@ public class ShoppingCart {
         if(user != null) user.getShoppingCartList().add(this);
     }
 
+    /**
+     * ShoppingItem 엔티티를 추가할때 추가되는 엔티티 객체의
+     * @param shoppingItem
+     */
     public void addShoppingItem(ShoppingItem shoppingItem) {
         shoppingItemSet.add(shoppingItem);
-        calculateTotalPrice();
+        totalPrice += shoppingItem.getTotalPrice();
     }
 
     public void removeShoppingItem(ShoppingItem shoppingItem) {
+        totalPrice -= shoppingItem.getTotalPrice();
         shoppingItemSet.remove(shoppingItem);
-        calculateTotalPrice();
-    }
-
-    private void calculateTotalPrice() {
-        shoppingItemSet.forEach(shoppingItem -> totalPrice += shoppingItem.getTotalPrice());
     }
 }
