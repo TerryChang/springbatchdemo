@@ -17,6 +17,7 @@ public class CustomShoppingCartJpaItemWriter extends JpaItemWriter<ShoppingCart>
 
     public void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
+        super.setEntityManagerFactory(entityManagerFactory);
     }
 
     public DataShareBean getDataShareBean() {

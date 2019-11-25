@@ -7,8 +7,11 @@ spring:
       password:
       driver-class-name: org.h2.Driver
     data: classpath*:data-h2.sql
+    schema: classpath*:schema-h2.sql
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+  batch:
+    initialize-schema: never
 #h2:
 #  tcpServer:
 #    enabled: true

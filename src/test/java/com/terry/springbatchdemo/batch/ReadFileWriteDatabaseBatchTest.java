@@ -7,9 +7,7 @@ import com.terry.springbatchdemo.repository.ShoppingItemRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
@@ -25,6 +23,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -55,7 +56,10 @@ public class ReadFileWriteDatabaseBatchTest {
 
     @Test
     public void 배치작업_테스트() throws Exception {
-        JobExecution jobExecution = jobLauncherTestUtils.launchJob();
+        // String jobDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String jobDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        JobParameters jobParameters = new JobParametersBuilder().addString("jobDateTime", jobDateTime).toJobParameters();
+        JobExecution jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
         // 배치작업이 정상적으로 실행 완료 되었는지 체크하기 위한 코드
         assertThat(jobExecution.getStatus(), is(BatchStatus.COMPLETED));
         // 배치 작업을 마친뒤의 Database 부분에 대해 체크하기 위한 코드를 넣어야 한다

@@ -20,27 +20,24 @@ public class ShoppingCartVOLineMapper implements LineMapper<ShoppingCartVO> {
     @Override
     public ShoppingCartVO mapLine(String line, int lineNumber) throws Exception {
         ShoppingCartVO shoppingCartVO = null;
-        try {
-            String jobLine = null;
-            if(startIdx == -1 && endIdx == -1) {
-                jobLine = line;
-            }else{
-                if(startIdx != -1) {
-                    if(endIdx == -1) {
-                        jobLine = line.substring(startIdx);
-                    }else {
-                        jobLine = line.substring(startIdx, endIdx);
-                    }
+        String jobLine = null;
+
+        if(startIdx == -1 && endIdx == -1) {
+            jobLine = line;
+        }else{
+            if(startIdx != -1) {
+                if(endIdx == -1) {
+                    jobLine = line.substring(startIdx);
+                }else {
+                    jobLine = line.substring(startIdx, endIdx);
                 }
             }
-            LineInfo lineInfo = LineInfo.builder().lineNumber(lineNumber).lineContent(line).lineContentForJson(jobLine).build();
-            // 객체 매핑전에 현재 어떤 라인을 매핑중인지 매핑 대상 라인의 줄번호와 줄 자체의 내용을 입력한다
-            dataShareBean.setCurrentLineinfo(lineInfo);
-            dataShareBean.addWriterLineInfoList(lineInfo);
-            shoppingCartVO = objectMapper.readValue(jobLine, ShoppingCartVO.class);
-        } catch (Exception e) {
-
         }
+        LineInfo lineInfo = LineInfo.builder().lineNumber(lineNumber).lineContent(line).lineContentForJson(jobLine).build();
+        // 객체 매핑전에 현재 어떤 라인을 매핑중인지 매핑 대상 라인의 줄번호와 줄 자체의 내용을 입력한다
+        dataShareBean.setCurrentLineinfo(lineInfo);
+        dataShareBean.addWriterLineInfoList(lineInfo);
+        shoppingCartVO = objectMapper.readValue(jobLine, ShoppingCartVO.class);
 
         return  shoppingCartVO;
     }

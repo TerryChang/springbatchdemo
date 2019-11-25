@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.terry.springbatchdemo.config.json.*;
+import com.terry.springbatchdemo.config.listener.ChunkListenerImpl;
+import com.terry.springbatchdemo.config.listener.CustomSkipListener;
 import com.terry.springbatchdemo.entity.Product;
 import com.terry.springbatchdemo.entity.ShoppingCart;
 import com.terry.springbatchdemo.entity.ShoppingItem;
@@ -110,18 +112,26 @@ public class BatchJobConfig {
     }
     @Bean
     @JobScope
-    public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory, ObjectMapper objectMapper, DataShareBean dataShareBean) throws Exception {
+    public Step readFileWriteDatabaseStep(StepBuilderFactory stepBuilderFactory
+            , FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader
+            , CustomItemProcessor customItemProcessor
+            // , CustomShoppingCartJpaItemWriter customShoppingCartJpaItemWriter
+            , JpaItemWriter<ShoppingCart> jpaItemWriter
+            , ChunkListenerImpl chunkListenerImpl
+            , CustomSkipListener customSkipListener) throws Exception {
         return stepBuilderFactory.get("readFileWriteDatabaseStep")
                 .<ShoppingCartVO, ShoppingCart>chunk(10)// chunk 메소드에 반드시 작업할 타입을 명시해주어야 한다. 그러지 않으면 processor 메소드에서 해당 작업을 하기 위해 만들어 놓은 메소드를 찾질 못한다(chunk 메소드에 타입을 명시하지 않으면 <Object, Object>로 인식하기 때문이다
-                .reader(shoppingCartFlatFileItemReader(objectMapper, dataShareBean))
-                .processor(customItemProcessor())
-                // .writer(shoppingCartJpaItemWriter())
-                .writer(customShoppingCartJpaItemWriter())
+                .reader(shoppingCartFlatFileItemReader)
+                .processor(customItemProcessor)
+                // .writer(customShoppingCartJpaItemWriter)
+                .writer(jpaItemWriter)
                 .faultTolerant()
                 .skipLimit(10)
                 .skip(BatchException.class)
                 .skip(JsonParseException.class)
                 .skip(JsonMappingException.class)
+                .listener(customSkipListener)
+                .listener(chunkListenerImpl)
                 // .writer(shoppingCartDebugItemWriter())
                 // .writer(shoppingCartLoggingItemWriter())
                 .build();
@@ -132,10 +142,18 @@ public class BatchJobConfig {
 
     @Bean
     @StepScope
-    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(ObjectMapper objectMapper, DataShareBean dataShareBean) {
-        String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        String todayString2 = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, ObjectMapper objectMapper, DataShareBean dataShareBean) {
+        // String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        // String todayString2 = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        if(jobDateTime == null) {
+            logger.info("jobParameters[jobDateTime] is null");
+        } else {
+            logger.info("jobParameters[jobDateTime] is {}", jobDateTime);
+        }
+
+        String todayString = jobDateTime.substring(0, 4) + "-" + jobDateTime.substring(4, 6) + "-" + jobDateTime.substring(6, 8);
         String filePathName = filePath + "/" + fileNamePrefix + todayString + "." + fileExt;
+
         // LineMapper<LineResultVO> lineResultVOLineMapper = new LineResultVOLineMapper(objectMapper, 15, -1);
         LineMapper<ShoppingCartVO> ShoppingCartVOLineMapper = new ShoppingCartVOLineMapper(objectMapper, 15, -1, dataShareBean);
 
@@ -162,30 +180,44 @@ public class BatchJobConfig {
 
     @Bean
     @StepScope
-    public CustomItemProcessor customItemProcessor(DataShareBean dataShareBean) {
+    public CustomItemProcessor customItemProcessor(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, DataShareBean dataShareBean) {
         return new CustomItemProcessor(userRepository, productRepository, dataShareBean);
     }
 
     @Bean
     @StepScope
-    public JpaItemWriter<ShoppingCart> shoppingCartJpaItemWriter() {
+    public JpaItemWriter<ShoppingCart> shoppingCartJpaItemWriter(@Value("#{jobParameters[jobDateTime]}") String jobDateTime) {
         JpaItemWriter<ShoppingCart> jpaItemWriter = new JpaItemWriter<>();
         jpaItemWriter.setEntityManagerFactory(entityManagerFactory);
         return jpaItemWriter;
     }
 
+    /*
     @Bean
     @StepScope
-    public CustomShoppingCartJpaItemWriter customShoppingCartJpaItemWriter(DataShareBean dataShareBean) {
+    public CustomShoppingCartJpaItemWriter customShoppingCartJpaItemWriter(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, DataShareBean dataShareBean) {
         CustomShoppingCartJpaItemWriter customShoppingCartJpaItemWriter = new CustomShoppingCartJpaItemWriter();
         customShoppingCartJpaItemWriter.setEntityManagerFactory(entityManagerFactory);
         return customShoppingCartJpaItemWriter;
     }
+    */
 
     @Bean
     @StepScope
-    public LoggingItemWriter<ShoppingCart> shoppingCartLoggingItemWriter() {
+    public LoggingItemWriter<ShoppingCart> shoppingCartLoggingItemWriter(@Value("#{jobParameters[jobDateTime]}") String jobDateTime) {
         return new LoggingItemWriter<>("ShoppingCart : {}");
+    }
+
+    @Bean
+    @StepScope
+    public CustomSkipListener customSkipListener(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, DataShareBean dataShareBean) {
+        return CustomSkipListener.builder().dataShareBean(dataShareBean).jobDateTime(jobDateTime).build();
+    }
+
+    @Bean
+    @StepScope
+    public ChunkListenerImpl chunkListenerImpl(DataShareBean dataShareBean) {
+        return ChunkListenerImpl.builder().dataShareBean(dataShareBean).build();
     }
 
     private ItemWriter<ShoppingCart> shoppingCartDebugItemWriter() {

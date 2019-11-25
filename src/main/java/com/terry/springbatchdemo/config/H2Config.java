@@ -14,8 +14,8 @@ import org.springframework.context.annotation.Profile;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
-@Configuration
-@Profile({"h2", "h2_log4jdbc"})
+// @Configuration
+// @Profile({"h2", "h2_log4jdbc"})
 @Slf4j
 public class H2Config {
 

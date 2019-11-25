@@ -4,14 +4,36 @@ spring:
 #      jdbc-url: jdbc:log4jdbc:h2:tcp://localhost:9092/mem:testdb;MVCC=TRUE
 #      url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
 #      jdbc-url: jdbc:log4jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
-      jdbc-url: jdbc:log4jdbc:h2:tcp://localhost:9092/springbatch
+      jdbc-url: jdbc:log4jdbc:h2:tcp://localhost:9092/springbatch;DB_CLOSE_ON_EXIT=FALSE
       username: sa
       password:
       driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
 #      driver-class-name: org.h2.Driver
     data: classpath*:data-h2.sql
+    schema: classpath*:schema-h2.sql
+    initialization-mode: always
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: validate
+# spring.batch.job.enabled 속성은 spring context가 올라가는 시점에 job 을 실행시키도록 할 것인지를 설정하는 옵션이다.
+# 이 옵션은 기본이 true 인데 jobparameter 를 같이 사용하는 상황에서는 문제가 발생한다
+# jobparameter를 사용하는 이유는 batch를 실행할때 특정 파라미터를 전달하기 위함인데 이를 사용할려면 Job과 Step에 @JobScope, @StepScope 어노테이션을 사용하여
+# 관련 bean이 생성되는 시점을 context가 초기화가 되는 단계가 아닌 job과 step이 실제로 실행되는 시점에 생성되도록 해야 한다
+# 그러나 spring.batch.job.enabled 속성을 true로 하면 context가 초기화되는 시점에 한번 강제적으로 실행되기 때문에
+# 이 시점에서는 jobparameter가 전달되지 않은 상태이므로 jobparameter를 받아오는 부분에서 null 로 받게 되기 때문에
+# 이를 이용한 step에서 실패가 발생해서 jobexecution이 실패하게 된다
+# 이렇게 context를 초기화하는 과정에서 한번 실행하면서 실패하게 되고
+# spring batch의 JobLauncher 클래스 객체에서 jobparameter가 전달되어지면서 다시 job이 실행하게 되는데 이때는 jobparameter가 전달되었기 때문에 job이 성공하게 된다
+# 이러한 과정에서 보면 jobinstance(job + jobparameter)가 2개가 생성이 되는데 하나는 context를 초기화하는 과정에서 jobparameter가 넘어가지 않은 관계로 null로 설정된 jobparameter와 job이 결합한 jobinstance이고
+# 다른 하나는 JobLauncher 객체에서 jobparameter를 받아 이를 job과 결합한 jobinstance이다.
+# 이 속성을 true로 둔 상태에서 BATCH_JOB_INSTANCE 테이블을 조회해보면 2개의 레코드가 생성된 것을 확인할 수 있다
+# 그래서 jobparameter를 받아서 작업해야 하는 경우엔 이 속성을 false로 해서 context가 설정되는 시점에 job이 실행되는 것을 막도록 해야 한다
+
+  batch:
+    initialize-schema: never
+    job:
+      enabled: false
 h2:
   tcpServer:
     enabled: true

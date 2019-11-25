@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration debug="true" scan="true" scanPeriods="30 seconds">
     <include resource="org/springframework/boot/logging/logback/base.xml" />
+    <springProfile name="home">
+        <property name="logDir" value="D:/projects/springbootstudy/samplelogs" />
+    </springProfile>
+    <springProfile name="notebook">
+        <property name="logDir" value="D:/projects/intellij_projects/springbootstudy/samplelogs" />
+    </springProfile>
     <springProfile name="h2_log4jdbc">
         <logger name="jdbc.sqlonly" level="off" additivity="false">
             <appender-ref ref="CONSOLE" />
@@ -17,6 +23,42 @@
             <appender-ref ref="CONSOLE" />
         </logger>
     </springProfile>
+    <property name="readExceptionLogFileName" value="readException"/>
+    <property name="processExceptionLogFileName" value="processException"/>
+    <property name="writeExceptionLogFileName" value="writeException"/>
+    <appender name="readExceptionAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${logDir}/${readExceptionLogFileName}-%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <charset>utf-8</charset>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="processExceptionAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${logDir}/${processExceptionLogFileName}-%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <charset>utf-8</charset>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="writeExceptionAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${logDir}/${writeExceptionLogFileName}-%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <charset>utf-8</charset>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
     <root level="info">
         <appender-ref ref="CONSOLE" />
     </root>
