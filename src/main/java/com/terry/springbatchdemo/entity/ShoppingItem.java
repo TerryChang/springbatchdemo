@@ -56,6 +56,18 @@ public class ShoppingItem {
     @Column(name="TOTAL_PRICE")
     private Long totalPrice;
 
+    /**
+     * 이 멤버변수를 두는 이유는..
+     * 장바구니를 이용하다보면 같은 상품에 같은 갯수로 장바구니를 등록하는 경우가 있다.
+     * 이러한 상황에서 이것을 entity로 변환할 경우 중복으로 entity가 생성이 되지 않는다.
+     * 왜냐면 영속성 컨텍스트에서는 이러한 상황을 같은 값이라고 보고 entity를 생성하지 않기 때문이다.
+     * key 역할을 하는 idx의 경우 persist 되는 시점에 값이 들어오기 때문에 저장하기 전까지는 영속성 컨텍스트에서 이를 중복으로 여러개를 만들수가 없는 상황이다
+     * 그래서 DB 작업과는 무관하지만 대신 별개의 entity 객체라는 것을 의미하게 하기 위해
+     * subIdentifier 라는 멤버변수를 두었다
+     */
+    @Transient
+    private int subIdentifier;
+
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(fetch=FetchType.LAZY)
@@ -63,10 +75,11 @@ public class ShoppingItem {
     private ShoppingCart shoppingCart;
 
     @Builder
-    public ShoppingItem(Product product, Integer cnt) {
+    public ShoppingItem(Product product, Integer cnt, int subIdentifier) {
         this.product = product;
         this.cnt = cnt;
         this.totalPrice = new Long(product.getProductPrice()) * cnt;
+        this.subIdentifier = subIdentifier;
     }
 
     @Id

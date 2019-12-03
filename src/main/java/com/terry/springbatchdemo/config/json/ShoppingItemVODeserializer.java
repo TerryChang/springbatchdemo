@@ -35,8 +35,7 @@ public class ShoppingItemVODeserializer extends StdDeserializer<ShoppingItemVO> 
         ProductVO productVO = objectMapper.convertValue(productJsonNode, ProductVO.class);
         int productCnt = jsonNode.get("cnt").intValue();
         int productTotalPrice = jsonNode.get("totalPriceByProduct").intValue();
-        ShoppingItemVO shoppingItemVO = new ShoppingItemVO(productVO, productCnt, productTotalPrice);
-
+        ShoppingItemVO shoppingItemVO = ShoppingItemVO.builder().product(productVO).cnt(productCnt).totalPriceByProduct(productTotalPrice).build();
         return shoppingItemVO;
     }
 }

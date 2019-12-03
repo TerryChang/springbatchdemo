@@ -1,14 +1,9 @@
 package com.terry.springbatchdemo.entity;
 
-import com.terry.springbatchdemo.vo.ShoppingItemVO;
 import lombok.*;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -21,10 +16,10 @@ import java.util.Set;
 @Table(name="SHOPPING_CART")
 @NoArgsConstructor
 @Getter
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @ToString
 @Access(AccessType.FIELD)
-public class ShoppingCart {
+public class ShoppingCart extends LineInfo{
     private Long idx;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,11 +41,13 @@ public class ShoppingCart {
     private Long totalPrice = 0L;
 
     @Builder
-    public ShoppingCart(User user) {
+    public ShoppingCart(User user, int lineNumber, String lineContent, String lineContentForJson) {
         this.user = user;
         user.getShoppingCartList().add(this);
-        // this.shoppingItemSet = shoppingItemSet;
-        // shoppingItemSet.forEach(shoppingItem -> {totalPrice += shoppingItem.getTotalPrice();});
+
+        super.setLineNumber(lineNumber);
+        super.setLineContent(lineContent);
+        super.setLineContentForJson(lineContentForJson);
     }
 
     @Id

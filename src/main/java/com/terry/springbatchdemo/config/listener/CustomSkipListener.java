@@ -13,66 +13,67 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.SkipListener;
+import org.springframework.batch.item.file.FlatFileParseException;
 
 import java.util.List;
 
 @Builder
 public class CustomSkipListener implements SkipListener<ShoppingCartVO, ShoppingCart> {
 
-    private final DataShareBean dataShareBean;
-
-    private final Logger readExceptionLogger = LoggerFactory.getLogger("testBuyLogger");
-    private final Logger processExceptionLogger = LoggerFactory.getLogger("testBuyLogger");
-    private final Logger writeExceptionLogger = LoggerFactory.getLogger("testBuyLogger");
+    private final Logger readExceptionLogger = LoggerFactory.getLogger("readExceptionLogger");
+    private final Logger processExceptionLogger = LoggerFactory.getLogger("processExceptionLogger");
+    private final Logger writeExceptionLogger = LoggerFactory.getLogger("writeExceptionLogger");
 
     private final String jobDateTime;
 
     @Override
     public void onSkipInRead(Throwable t) {
 
-        // 현재 처리중인 행을 읽어서 log file에 기록한다
-        int lineNumber = dataShareBean.getCurrentLineinfo().getLineNumber();
-        String lineContent = dataShareBean.getCurrentLineinfo().getLineContent();
-        String exceptionMessage = t.getMessage();
-        if(t instanceof BatchException) {
-            readExceptionLogger.info("Line Number {} BatchException : {}", lineNumber, exceptionMessage);
-        } else if(t instanceof JsonParseException) {
-            readExceptionLogger.info("Line Number {} JsonParseException : {}", lineNumber, exceptionMessage);
-        } else if(t instanceof JsonMappingException) {
-            readExceptionLogger.info("Line Number {} JsonMappingException : {}", lineNumber, exceptionMessage);
-        } else {
+        // read 과정에서 예외가 발생하면 FlatFileParseException 으로 wrapping 되어서 던져지기 때문에 우리가 던진 BatchException을 꺼낼려면
+        // getCause 메소드를 이용해서 Throwable 객체를 가져온뒤 이를 BatchException 으로 casting 을 해서 작업하도록 한다
+        if(t instanceof  FlatFileParseException) {
+            Throwable cause = t.getCause();
+
+            String className = cause.getClass().getSimpleName();
+            String exceptionMessage = cause.getMessage();
+
+            if(cause instanceof BatchException) {
+                BatchException batchException = (BatchException)cause;
+                LineInfo lineInfo = batchException.getLineInfo();
+                int lineNumber = lineInfo.getLineNumber();
+                String lineContent = lineInfo.getLineContent();
+
+                readExceptionLogger.info("Line Number {} : {} : {} - {}", lineNumber, className, exceptionMessage, lineContent);
+            } else {
+                readExceptionLogger.info("{} - {}", className, exceptionMessage);
+            }
+
+        } else { // FlatFileException 이 아닌 다른 예외가 던져질 경우 이에 대한 정보를 기록한다
             String className = t.getClass().getSimpleName();
-            readExceptionLogger.info("Line Number {} " + className + " : {}", lineNumber, exceptionMessage);
+            String exceptionMessage = t.getMessage();
+            readExceptionLogger.info("{} - {}", className, exceptionMessage);
         }
 
-        readExceptionLogger.info("Line Content : {}", lineContent);
     }
 
     @Override
     public void onSkipInProcess(ShoppingCartVO item, Throwable t) {
-        int lineNumber = dataShareBean.getCurrentLineinfo().getLineNumber();
-        String lineContent = dataShareBean.getCurrentLineinfo().getLineContent();
+        int lineNumber = item.getLineNumber();
+        String lineContent = item.getLineContent();
         String exceptionMessage = t.getMessage();
 
         String className = t.getClass().getSimpleName();
-        processExceptionLogger.info("Line Number {} " + className + " : {}", lineNumber, exceptionMessage);
-        processExceptionLogger.info("Line Number {} " + className + " : {}", lineNumber, exceptionMessage);
+        processExceptionLogger.info("Line Number {} : {} : {} - {}", lineNumber, className, exceptionMessage, lineContent);
     }
 
     @Override
     public void onSkipInWrite(ShoppingCart item, Throwable t) {
-        // write의 경우에는 chunk 단위로 writer가 일어나기 때문에 예외가 발생할 경우 chunk 단위에 속한 모두가 write에 실패하게 된다
-        // 그래서 write에 실패한 것에 대해서는 해당 item에 대한 부분이므로 그거는 그거대로 기록해주고
-        // 해당 item을 포함한 chunk 단위로 실패한것은 그거대로 기록해주어야 한다
+
+        int lineNumber = item.getLineNumber();
+        String lineContent = item.getLineContent();
+        String exceptionMessage = t.getMessage();
 
         String className = t.getClass().getSimpleName();
-        writeExceptionLogger.info(className + " : {}", t.getMessage());
-        writeExceptionLogger.info("Exception item : " + item.toString());
-        List<LineInfo> writerLineInfoList = dataShareBean.getWriterLineInfoList();
-        writeExceptionLogger.info("Chunk Item List Start");
-        writerLineInfoList.forEach(lineInfo -> {
-            writeExceptionLogger.info(item.toString());
-        });
-        writeExceptionLogger.info("Chunk Item List End");
+        writeExceptionLogger.info("Line Number {} : {} : {} - {}", lineNumber, className, exceptionMessage, lineContent);
     }
 }

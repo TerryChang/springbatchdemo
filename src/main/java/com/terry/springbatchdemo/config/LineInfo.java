@@ -1,12 +1,14 @@
 package com.terry.springbatchdemo.config;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-@Builder
 @Getter
-@EqualsAndHashCode
+@Setter
 public class LineInfo {
-    private final int lineNumber;
-    private final String lineContent;
-    private final String lineContentForJson;
+    private int lineNumber;
+    private String lineContent;
+    private String lineContentForJson;
+
 }

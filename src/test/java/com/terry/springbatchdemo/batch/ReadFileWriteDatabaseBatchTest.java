@@ -1,38 +1,31 @@
 package com.terry.springbatchdemo.batch;
 
-import com.terry.springbatchdemo.config.BatchJobConfig;
-import com.terry.springbatchdemo.config.TestBatchConfig;
 import com.terry.springbatchdemo.repository.ShoppingCartRepository;
 import com.terry.springbatchdemo.repository.ShoppingItemRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.batch.core.*;
-import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.core.AutoConfigureCache;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureDataJpa;
-import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestEntityManager;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@ActiveProfiles({"h2_log4jdbc", "local"})          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
+@ActiveProfiles({"h2_log4jdbc", "local", "notebook"})          // log4jdbc가 적용된 H2 DataSource를 사용하도록 profile 설정
 @SpringBatchTest
 @SpringBootTest
 /*

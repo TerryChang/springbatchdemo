@@ -1,21 +1,18 @@
 package com.terry.springbatchdemo.config;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.terry.springbatchdemo.config.json.*;
+import com.terry.springbatchdemo.config.json.ProductVODeserializer;
+import com.terry.springbatchdemo.config.json.ShoppingCartVODeserializer;
+import com.terry.springbatchdemo.config.json.ShoppingCartVOLineMapper;
+import com.terry.springbatchdemo.config.json.ShoppingItemVODeserializer;
 import com.terry.springbatchdemo.config.listener.ChunkListenerImpl;
 import com.terry.springbatchdemo.config.listener.CustomSkipListener;
-import com.terry.springbatchdemo.entity.Product;
 import com.terry.springbatchdemo.entity.ShoppingCart;
-import com.terry.springbatchdemo.entity.ShoppingItem;
-import com.terry.springbatchdemo.entity.User;
 import com.terry.springbatchdemo.repository.ProductRepository;
 import com.terry.springbatchdemo.repository.ShoppingCartRepository;
 import com.terry.springbatchdemo.repository.ShoppingItemRepository;
 import com.terry.springbatchdemo.repository.UserRepository;
-import com.terry.springbatchdemo.vo.LineResultVO;
 import com.terry.springbatchdemo.vo.ProductVO;
 import com.terry.springbatchdemo.vo.ShoppingCartVO;
 import com.terry.springbatchdemo.vo.ShoppingItemVO;
@@ -23,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.*;
-import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
@@ -37,10 +33,6 @@ import org.springframework.core.io.FileSystemResource;
 
 import javax.persistence.EntityManagerFactory;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * @EnableBatchProcessing 어노테이션을 Spring Boot의 Application 클래스에 명시할경우 @DataJpaTest와 문제를 일으키는 상황이 있다(@DataJpaTest 관련 모든 테스트 클래스에서 flush 하는 과정에 문제가 발생)
@@ -88,19 +80,15 @@ public class BatchJobConfig {
     @Bean
     public ObjectMapper objectMapper() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
+        /*
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(ProductVO.class, new ProductVODeserializer(objectMapper));
         simpleModule.addDeserializer(ShoppingItemVO.class, new ShoppingItemVODeserializer(objectMapper));
         simpleModule.addDeserializer(ShoppingCartVO.class, new ShoppingCartVODeserializer(objectMapper));
         objectMapper.registerModule(simpleModule);
+        */
 
         return objectMapper;
-    }
-
-    @Bean
-    @StepScope
-    public DataShareBean dataShareBean() {
-        return new DataShareBean();
     }
 
     @Bean
@@ -128,8 +116,7 @@ public class BatchJobConfig {
                 .faultTolerant()
                 .skipLimit(10)
                 .skip(BatchException.class)
-                .skip(JsonParseException.class)
-                .skip(JsonMappingException.class)
+                .skip(FlatFileParseException.class)
                 .listener(customSkipListener)
                 .listener(chunkListenerImpl)
                 // .writer(shoppingCartDebugItemWriter())
@@ -140,22 +127,33 @@ public class BatchJobConfig {
         // IOException, JsonParseException, JsonMappingException
     }
 
+    /*
+    reader와 processor 의 호출 관계에 대한 내용을 정리하고자 한다
+    https://jojoldu.tistory.com/331 에 가보면 reader 와 processor 간의 호출은 chunk size 만큼 반복되는 것으로 설명되어 있다
+    예를 들어 내가 chunksize를 10 으로 지정했으면
+    reader.read 메소드 -> processor.process 메소드 호출이 10번 일어나야 하는데
+    실제 중단점을 걸고 호출 관계를 보면
+    reader.read 메소드 10번 호출 -> processor.process 메소드 10번 호출
+    이런식으로 전개되고 있다
+    그래서 skip 과 관련된 exception 발생시 관련 log를 기록하기 위해 현재 처리중인 행과 라인을 보관하는 bean을 만들어서 작업하고 있었으나..
+    이렇게 chunk 단위로 read 메소드 반복호출 -> process 메소드 반복호출 이렇게 전개가 되어버리면
+    현재 처리중인 행을 보관할 것이 아니라..
+    예외가 발생했을때 예외가 발생한 행을 보관하는 컨셉으로 진행해야 할 듯 하다
+    이것과 관련해서는 2019년 11월 26일 위에 언급한 글에 이와 관련된 내용으로 질문 댓글을 달은 상황이다
+    이러다 보니 skiplistner의 skip 관련 메소드 호출 시점이
+    line을 처리하는 과정에서 예외가 발생하여 skip 메소드를 호출하는 것이 아니라
+    chunk 단위로 skip 메소드가 한번만 호출되는 듯 하다..이 부분은 좀더 검증이 필요하다다     */
     @Bean
     @StepScope
-    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, ObjectMapper objectMapper, DataShareBean dataShareBean) {
+    public FlatFileItemReader<ShoppingCartVO> shoppingCartFlatFileItemReader(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, ObjectMapper objectMapper) {
         // String todayString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         // String todayString2 = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        if(jobDateTime == null) {
-            logger.info("jobParameters[jobDateTime] is null");
-        } else {
-            logger.info("jobParameters[jobDateTime] is {}", jobDateTime);
-        }
 
         String todayString = jobDateTime.substring(0, 4) + "-" + jobDateTime.substring(4, 6) + "-" + jobDateTime.substring(6, 8);
         String filePathName = filePath + "/" + fileNamePrefix + todayString + "." + fileExt;
 
         // LineMapper<LineResultVO> lineResultVOLineMapper = new LineResultVOLineMapper(objectMapper, 15, -1);
-        LineMapper<ShoppingCartVO> ShoppingCartVOLineMapper = new ShoppingCartVOLineMapper(objectMapper, 15, -1, dataShareBean);
+        LineMapper<ShoppingCartVO> ShoppingCartVOLineMapper = new ShoppingCartVOLineMapper(objectMapper, 15, -1);
 
         return new FlatFileItemReaderBuilder<ShoppingCartVO>()
                 .lineMapper(ShoppingCartVOLineMapper)
@@ -180,8 +178,8 @@ public class BatchJobConfig {
 
     @Bean
     @StepScope
-    public CustomItemProcessor customItemProcessor(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, DataShareBean dataShareBean) {
-        return new CustomItemProcessor(userRepository, productRepository, dataShareBean);
+    public CustomItemProcessor customItemProcessor(@Value("#{jobParameters[jobDateTime]}") String jobDateTime) {
+        return new CustomItemProcessor(userRepository, productRepository);
     }
 
     @Bean
@@ -210,14 +208,14 @@ public class BatchJobConfig {
 
     @Bean
     @StepScope
-    public CustomSkipListener customSkipListener(@Value("#{jobParameters[jobDateTime]}") String jobDateTime, DataShareBean dataShareBean) {
-        return CustomSkipListener.builder().dataShareBean(dataShareBean).jobDateTime(jobDateTime).build();
+    public CustomSkipListener customSkipListener(@Value("#{jobParameters[jobDateTime]}") String jobDateTime) {
+        return CustomSkipListener.builder().jobDateTime(jobDateTime).build();
     }
 
     @Bean
     @StepScope
-    public ChunkListenerImpl chunkListenerImpl(DataShareBean dataShareBean) {
-        return ChunkListenerImpl.builder().dataShareBean(dataShareBean).build();
+    public ChunkListenerImpl chunkListenerImpl() {
+        return ChunkListenerImpl.builder().build();
     }
 
     private ItemWriter<ShoppingCart> shoppingCartDebugItemWriter() {

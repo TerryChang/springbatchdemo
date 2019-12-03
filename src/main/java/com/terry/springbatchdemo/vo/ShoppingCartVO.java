@@ -1,24 +1,25 @@
 package com.terry.springbatchdemo.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.terry.springbatchdemo.config.LineInfo;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class ShoppingCartVO {
+@Builder(builderClassName = "ShoppingCartVOBuilder", toBuilder = true)
+@JsonDeserialize(builder = ShoppingCartVO.ShoppingCartVOBuilder.class)
+public class ShoppingCartVO extends LineInfo {
     private String loginId;
-    List<ShoppingItemVO> shoppingItemList = new ArrayList<>();
+    List<ShoppingItemVO> shoppingItemList;
     private long totalPrice;
 
-    public ShoppingCartVO() {
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class ShoppingCartVOBuilder {
 
-    }
-
-    public ShoppingCartVO(String loginId, List<ShoppingItemVO> shoppingItemVOList, long totalPrice) {
-        this.loginId = loginId;
-        this.shoppingItemList = shoppingItemVOList;
-        this.totalPrice = totalPrice;
     }
 
 }

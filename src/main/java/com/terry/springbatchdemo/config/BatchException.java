@@ -1,17 +1,22 @@
 package com.terry.springbatchdemo.config;
 
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
 public class BatchException extends Exception {
 
-    private final LineInfo lineIfo;
+    private final LineInfo lineInfo;
 
+    @Builder
     public BatchException(LineInfo lineInfo, String message) {
         super(message);
-        this.lineIfo = lineInfo;
+        this.lineInfo = lineInfo;
     }
 
+    @Builder
     public BatchException(LineInfo lineInfo, String message, Throwable t) {
         super(message, t);
-        this.lineIfo = lineInfo;
-
+        this.lineInfo = lineInfo;
     }
 }

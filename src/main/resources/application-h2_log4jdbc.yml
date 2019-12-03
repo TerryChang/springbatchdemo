@@ -34,6 +34,12 @@ spring:
     initialize-schema: never
     job:
       enabled: false
+  quartz:
+    datasource:
+      url: jdbc:log4jdbc:h2:tcp://localhost:9092/springbatch;DB_CLOSE_ON_EXIT=FALSE
+      username: sa
+      password:
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
 h2:
   tcpServer:
     enabled: true

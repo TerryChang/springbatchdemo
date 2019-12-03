@@ -43,7 +43,7 @@ public class ShoppingCartVODeserializer extends StdDeserializer<ShoppingCartVO> 
                 ShoppingItemVO shoppingItemVO = objectMapper.convertValue(item, ShoppingItemVO.class);
                 shoppingItemList.add(shoppingItemVO);
             }
-            shoppingCartVO = new ShoppingCartVO(loginId, shoppingItemList, totalPrice);
+            shoppingCartVO = ShoppingCartVO.builder().loginId(loginId).shoppingItemList(shoppingItemList).totalPrice(totalPrice).build();
         } else {
             // shoppingItemList 항목이 배열이 아니기 때문에 예외처리
         }

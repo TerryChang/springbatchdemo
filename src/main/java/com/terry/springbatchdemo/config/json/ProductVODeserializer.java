@@ -33,6 +33,6 @@ public class ProductVODeserializer extends StdDeserializer<ProductVO> {
         JsonNode jsonNode = p.getCodec().readTree(p);
         Long idx = jsonNode.get("idx").longValue();
         int productPrice = jsonNode.get("productPrice").intValue();
-        return new ProductVO(idx, null, productPrice);
+        return ProductVO.builder().idx(idx).productPrice(productPrice).build();
     }
 }
