@@ -222,6 +222,20 @@ public class ShoppingCartEntityTest {
         ShoppingCart shoppingCart = testEntityManager.find(ShoppingCart.class, orgShoppingCart.getIdx());
     }
 
+    /**
+     * LinkedHashSet의_equals_메소드가_저장된_순서도_같이_비교하여_판단하는지_테스트 메소드와
+     * LinkedList의_equals_메소드가_저장된_순서도_같이_비교하여_판단하는지_테스트는 JPA를 사용하면서 Collection을 어디에다가 저장하는게 나을지를 체크하느라 확인해서 만든 메소드이다.
+     * Linked 개념이기 때문에 LinkedHashSet 도 저장된 순서가 있을꺼라 생각했는데..
+     * 여기서 간과한 것이 있다. Set은 순서 개념이 없고, List는 순서 개념이 있다는 것이다
+     * 예를 들어 db에서 조회한 결과가 있는데 이것을 LinkedHashSet과 LinkedList에 각각 넣었다고 가정해보자
+     * iterator를 이용해서 loop를 돌려 확인해보면 넣은 순서대로 나오는 것은 확인이 된다
+     * 그러나 동일한값들을 넣되 대신 순서를 다르게 해서 넣은 뒤 이를 비교해보면
+     * LinkedHashSet의 경우는 순서가 달라도 이 두 객체를 동일하다고 판단하는 반면에
+     * LinkedList의 경우는 순서가 다르기 때문에 구 객체가 서로 다르다고 판단한다
+     * Linked 개념이어서 연결관계에 있기 때문에 순서대로 연결된거 같은데
+     * 막상 통으로 비교해보면 다르다고 판단하기 때문에
+     * LinkedHashSet의 경우 순서까지 비교할려면 loop를 돌려서 확인해보는 것이 더 정확하다
+     */
     @Test
     public void LinkedHashSet의_equals_메소드가_저장된_순서도_같이_비교하여_판단하는지_테스트() {
         LinkedHashSet<Integer> lhs1 = new LinkedHashSet<>();
@@ -237,8 +251,48 @@ public class ShoppingCartEntityTest {
         lhs2.add(40);
         lhs2.add(20);
 
-        //LinkedHashSet의 equals 메소드가 순서도 같이 비교한다는 생각에 false라고 설정하고 테스트 했지만 false로 하면 테스트가 실패한다
-        // 바꿔말하면 LinkedHashSet의 경우 크기와 들어가 있는 값에 대한 비교까지는 하지만 들어가 있는 순서는 비교하지 않는다는 뜻으로 해석된다
+        assertThat(lhs1.equals(lhs2), is(true));
+
+        Iterator<Integer> lhs1Iterator = lhs1.iterator();
+        Iterator<Integer> lhs2Iterator = lhs2.iterator();
+
+        int count = 0;
+        while(lhs1Iterator.hasNext() && lhs2Iterator.hasNext()) {
+            int lhs1Int = lhs1Iterator.next();
+            int lhs2Int = lhs2Iterator.next();
+
+            logger.info("{} index lhs1 : {}, lhs2 : {}", count, lhs1Int, lhs2Int);
+            count++;
+        }
+    }
+
+    @Test
+    public void LinkedList의_equals_메소드가_저장된_순서도_같이_비교하여_판단하는지_테스트() {
+        LinkedList<Integer> lhs1 = new LinkedList<>();
+        LinkedList<Integer> lhs2 = new LinkedList<>();
+
+        lhs1.add(10);
+        lhs1.add(20);
+        lhs1.add(30);
+        lhs1.add(40);
+
+        lhs2.add(10);
+        lhs2.add(30);
+        lhs2.add(40);
+        lhs2.add(20);
+
         assertThat(lhs1.equals(lhs2), is(false));
+
+        Iterator<Integer> lhs1Iterator = lhs1.iterator();
+        Iterator<Integer> lhs2Iterator = lhs2.iterator();
+
+        int count = 0;
+        while (lhs1Iterator.hasNext() && lhs2Iterator.hasNext()) {
+            int lhs1Int = lhs1Iterator.next();
+            int lhs2Int = lhs2Iterator.next();
+
+            logger.info("{} index lhs1 : {}, lhs2 : {}", count, lhs1Int, lhs2Int);
+            count++;
+        }
     }
 }

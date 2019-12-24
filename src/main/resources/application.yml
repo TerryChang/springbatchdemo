@@ -22,28 +22,6 @@ spring:
 #    job:
 #      names: ${job.name:NONE}
 
-# spring.quartz.datasource 란 속성은 원래 spring boot 에서는 제공되지 않는 속성이다
-# 다만 quartz 에서 사용할 datasource를 만들때 필요한 속성값들을 설정하기 위해 spring.quartz.datasource 란 속성을 인위적으로 설정했다
-  quartz:
-    datasource:
-      url: jdbc:log4jdbc:h2:tcp://localhost:9092/springbatch;DB_CLOSE_ON_EXIT=FALSE
-      username: sa
-      password:
-      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    auto-startup: false
-    jdbc:
-      initialize-schema: never
-    job-store-type: jdbc
-    properties:
-      org:
-        quartz:
-          threadPool:
-            threadCount: 5
-          jobstore:
-            useProperties: true
-            class: org.quartz.impl.jdbcjobstore.JobStoreTX
-            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
-            dataSource: quartzDataSource
 logfile:
   path: /home/samplelogs
   fileNamePrefix: buylog-
